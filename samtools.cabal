@@ -1,0 +1,33 @@
+Name:                samtools
+Version:             0.0.20110214
+Synopsis:            Low-level binding to the C samtools library
+License:             BSD3
+License-file:        LICENSE
+Author:              Nicholas Ingolia
+Maintainer:          nick@ingolia.org
+Category:            Bio
+
+Build-type:          Simple
+Cabal-version:       >=1.2
+
+Library
+  Exposed-modules:     Bio.SamTools.LowLevel
+  Other-modules:       C2HS
+  Build-depends:       base, bytestring, haskell98
+  Hs-Source-Dirs:      src
+  Build-tools:         c2hs
+  Include-dirs:        /usr/local/include/bam, include
+  C-sources:           cbits/samtools.c
+  Includes:            include/samtools.h
+  Extra-libraries:     bam, z
+
+Executable samtest1
+  Build-depends:       base, bytestring, haskell98
+  Hs-Source-Dirs:      src, test
+  Main-Is:             SamTest1.hs
+  Other-Modules:       Bio.SamTools.LowLevel
+  Build-tools:         c2hs
+  Include-dirs:        /usr/local/include/bam, include
+  C-sources:           cbits/samtools.c
+  Includes:            include/samtools.h
+  Extra-libraries:     bam, z
