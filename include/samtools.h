@@ -3,6 +3,9 @@
 
 #include "sam.h"
 
+bamFile bam_open_(const char *, const char *);
+int bam_close_(bamFile bf);
+
 int bam_fpaired(void);
 int bam_fproper_pair(void);
 int bam_funmap(void);
@@ -30,5 +33,8 @@ char *bam1_qname_(bam1_t *b);
 uint8_t *bam1_seq_(bam1_t *b);
 uint8_t *bam1_qual_(bam1_t *b);
 uint8_t bam1_seqi_(uint8_t *s, int i);
+
+bam1_t *bam_init1_(void);
+void bam_destroy1_(bam1_t *b);
 
 #endif /* _samtools_h */

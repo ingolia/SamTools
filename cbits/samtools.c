@@ -2,6 +2,9 @@
 
 #include "samtools.h"
 
+bamFile bam_open_(const char *fn, const char *mode) { return bam_open(fn, mode); }
+int bam_close_(bamFile fp) { return bam_close(fp); }
+
 int bam_fpaired(void) { return BAM_FPAIRED; }
 int bam_fproper_pair(void) { return BAM_FPROPER_PAIR; }
 int bam_funmap(void) { return BAM_FUNMAP; }
@@ -29,3 +32,6 @@ char *bam1_qname_(bam1_t *b) { return bam1_qname(b); }
 uint8_t *bam1_seq_(bam1_t *b) { return bam1_seq(b); }
 uint8_t *bam1_qual_(bam1_t *b) { return bam1_qual(b); }
 uint8_t bam1_seqi_(uint8_t *s, int i) { return bam1_seqi(s, i); }
+
+bam1_t *bam_init1_(void) { return bam_init1(); }
+void bam_destroy1_(bam1_t *b) { bam_destroy1(b); }

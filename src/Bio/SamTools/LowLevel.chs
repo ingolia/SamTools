@@ -3,12 +3,18 @@
 
 module Bio.SamTools.LowLevel ( TamFilePtr
                              , samOpen, samClose
+                             , BamFilePtr
+                             , bamOpen, bamClose
                              , BamHeaderPtr
                              , getNTargets, getTargetName, getTargetLen, bamGetTid
-                             , samHeaderRead, samHeaderRead2
+                             , samHeaderRead, samHeaderRead2                             
+                             , samRead1
+                             , bamHeaderRead, bamHeaderWrite
+                             , bamRead1, bamWrite1
                              , Bam1CorePtr
                              , Bam1Ptr
-                             , samRead1
+                             , bamInit1, bamDestroy1
+                             , sbamOpen, sbamClose, getSbamHeader, sbamRead, sbamWrite
                              )
 where
 
@@ -22,6 +28,16 @@ import Foreign.Ptr
 
 data TamFileInt
 {#pointer tamFile as TamFilePtr -> TamFileInt#}
+
+data BamFileInt
+{#pointer bamFile as BamFilePtr -> BamFileInt#}
+
+{#fun unsafe bam_open_ as bamOpen
+  { `String'
+  , `String' } -> `BamFilePtr' id#}
+
+{#fun unsafe bam_close_ as bamClose
+  {id `BamFilePtr'} -> `CInt' id#}
 
 data BamHeaderInt
 {#pointer *bam_header_t as BamHeaderPtr -> BamHeaderInt#}
@@ -145,6 +161,60 @@ data Bam1Int
 {#fun unsafe bam_get_tid as bamGetTid
   { id `BamHeaderPtr'
   , useAsCString* `BS.ByteString'} -> `Int'#}
+
+-- Low-level BAM I/O
+{#fun unsafe bam_header_init as bamHeaderInit
+  { } -> `BamHeaderPtr' id#}
+
+{#fun unsafe bam_header_destroy as bamHeaderDestroy
+  {id `BamHeaderPtr' } -> `()'#}
+
+{#fun unsafe bam_header_read as bamHeaderRead
+  {id `BamFilePtr'} -> `BamHeaderPtr' id#}
+
+{#fun unsafe bam_header_write as bamHeaderWrite
+  { id `BamFilePtr'
+  , id `BamHeaderPtr' } -> `CInt' id#}
+
+{#fun unsafe bam_read1 as bamRead1
+  { id `BamFilePtr' 
+  , id `Bam1Ptr' } -> `CInt' id#}
+
+{#fun unsafe bam_write1 as bamWrite1
+  { id `BamFilePtr' 
+  , id `Bam1Ptr' } -> `CInt' id#}
+
+{#fun unsafe bam_init1_ as bamInit1
+  { } -> `Bam1Ptr' id#}
+
+{#fun unsafe bam_destroy1_ as bamDestroy1
+  { id `Bam1Ptr' } -> `()'#}
+
+-- Unified SAM/BAM I/O
+
+data SamFileInt
+{#pointer *samfile_t as SamFilePtr -> SamFileInt#}
+
+getSbamHeader :: SamFilePtr -> IO BamHeaderPtr
+getSbamHeader = {#get samfile_t->header#}
+
+{#fun unsafe samopen as sbamOpen
+  { `String'
+  , `String'
+  , id `Ptr ()' } -> `SamFilePtr' id#}
+    
+{#fun unsafe samclose as sbamClose
+  { id `SamFilePtr' } -> `()'#}
+
+{#fun unsafe samread as sbamRead
+  { id `SamFilePtr'
+  , id `Bam1Ptr' } -> `CInt' id#}
+
+{#fun unsafe samwrite as sbamWrite
+  { id `SamFilePtr'
+  , id `Bam1Ptr' } -> `CInt' id#}
+
+-- Helpers
 
 packCString = BS.packCString
 useAsCString = BS.useAsCString
