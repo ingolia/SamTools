@@ -17,7 +17,7 @@ main = do f <- Bam.openTamInFile "test/test.sam"
           maybe (return ()) (BS.putStrLn . Bam.queryName) b2
           flip (maybe (return ())) b1 $ \b -> do
             BS.putStrLn . Bam.queryName $ b
-            print ( Bam.targetID b, Bam.targetName b, Bam.targetLen b)
+            print ( Bam.targetID b, Bam.targetName b, Bam.targetLen b )
             print . Bam.position $ b
-            print ( Bam.queryName b, Bam.queryLength b, Bam.querySeq b)
-            
+            print ( Bam.queryName b, Bam.queryLength b, Bam.querySeq b )
+            print ( Bam.cigars b )

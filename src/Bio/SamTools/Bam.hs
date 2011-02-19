@@ -5,7 +5,7 @@ module Bio.SamTools.Bam ( Header
                         , targetID, targetName, targetLen, position
                         , isPaired, isProperPair, isUnmap, isMateUnmap, isReverse, isMateReverse
                         , isRead1, isRead2, isSecondary, isQCFail, isDup
-                        , queryName, queryLength, querySeq
+                        , cigars, queryName, queryLength, querySeq
                         , mateTargetID, mateTargetName, matePosition, insertSize
                         , InHandle, inHeader
                         , openTamInFile, openTamInFileWithIndex, openBamInFile
