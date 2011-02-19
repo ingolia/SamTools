@@ -37,7 +37,7 @@ Library
                        samtools-0.1.12a/glf.h, samtools-0.1.12a/khash.h,
                        samtools-0.1.12a/kseq.h, samtools-0.1.12a/ksort.h, samtools-0.1.12a/kstring.h,
                        samtools-0.1.12a/razf.h, samtools-0.1.12a/sam.h, samtools-0.1.12a/sam_header.h
-  CC-options:          -g -O2 -D_FILE_OFFSET_BITS=64 -D_USE_KNETFILE 
+  CC-options:          -g -O2 -D_FILE_OFFSET_BITS=64 -D_USE_KNETFILE -Wno-unused-result
   Extra-libraries:     z
 
 Executable samtest1
@@ -55,7 +55,7 @@ Executable samtest1
                        samtools-0.1.12a/faidx.c, samtools-0.1.12a/knetfile.c, samtools-0.1.12a/bam_sort.c,
                        samtools-0.1.12a/sam_header.c, samtools-0.1.12a/bam_reheader.c, samtools-0.1.12a/kprobaln.c,
                        samtools-0.1.12a/bam_maqcns.c, samtools-0.1.12a/errmod.c, samtools-0.1.12a/kaln.c
-  CC-options:          -g -O2 -D_FILE_OFFSET_BITS=64 -D_USE_KNETFILE 
+  CC-options:          -g -O2 -D_FILE_OFFSET_BITS=64 -D_USE_KNETFILE -Wno-unused-result
   Extra-libraries:     z
 
 Executable samtest2
@@ -73,5 +73,5 @@ Executable samtest2
                        samtools-0.1.12a/faidx.c, samtools-0.1.12a/knetfile.c, samtools-0.1.12a/bam_sort.c,
                        samtools-0.1.12a/sam_header.c, samtools-0.1.12a/bam_reheader.c, samtools-0.1.12a/kprobaln.c,
                        samtools-0.1.12a/bam_maqcns.c, samtools-0.1.12a/errmod.c, samtools-0.1.12a/kaln.c
-  CC-options:          -g -O2 -D_FILE_OFFSET_BITS=64 -D_USE_KNETFILE 
+  CC-options:          -g -O2 -D_FILE_OFFSET_BITS=64 -D_USE_KNETFILE -Wno-unused-result
   Extra-libraries:     z
