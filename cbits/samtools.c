@@ -5,17 +5,17 @@
 bamFile bam_open_(const char *fn, const char *mode) { return bam_open(fn, mode); }
 int bam_close_(bamFile fp) { return bam_close(fp); }
 
-int bam_fpaired(void) { return BAM_FPAIRED; }
-int bam_fproper_pair(void) { return BAM_FPROPER_PAIR; }
-int bam_funmap(void) { return BAM_FUNMAP; }
-int bam_fmunmap(void) { return BAM_FMUNMAP; }
-int bam_freverse(void) { return BAM_FREVERSE; }
-int bam_fmreverse(void) { return BAM_FMREVERSE; }
-int bam_fread1(void) { return BAM_FREAD1; }
-int bam_fread2(void) { return BAM_FREAD2; }
-int bam_fsecondary(void) { return BAM_FSECONDARY; }
-int bam_fqcfail(void) { return BAM_FQCFAIL; }
-int bam_fdup(void) { return BAM_FDUP; }
+uint32_t bam_fpaired(void) { return BAM_FPAIRED; }
+uint32_t bam_fproper_pair(void) { return BAM_FPROPER_PAIR; }
+uint32_t bam_funmap(void) { return BAM_FUNMAP; }
+uint32_t bam_fmunmap(void) { return BAM_FMUNMAP; }
+uint32_t bam_freverse(void) { return BAM_FREVERSE; }
+uint32_t bam_fmreverse(void) { return BAM_FMREVERSE; }
+uint32_t bam_fread1(void) { return BAM_FREAD1; }
+uint32_t bam_fread2(void) { return BAM_FREAD2; }
+uint32_t bam_fsecondary(void) { return BAM_FSECONDARY; }
+uint32_t bam_fqcfail(void) { return BAM_FQCFAIL; }
+uint32_t bam_fdup(void) { return BAM_FDUP; }
 
 uint32_t bam_cmatch(void) { return BAM_CMATCH; }
 uint32_t bam_cins(void) { return BAM_CINS; }

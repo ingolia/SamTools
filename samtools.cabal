@@ -11,9 +11,9 @@ Build-type:          Simple
 Cabal-version:       >=1.2
 
 Library
-  Exposed-modules:     Bio.SamTools.LowLevel
+  Exposed-modules:     Bio.SamTools.LowLevel, Bio.SamTools.Bam
   Other-modules:       C2HS
-  Build-depends:       base, bytestring, haskell98
+  Build-depends:       base, bytestring, haskell98, vector >= 0.7
   Hs-Source-Dirs:      src
   Build-tools:         c2hs
   Include-dirs:        /usr/local/include/bam, include
@@ -26,6 +26,17 @@ Executable samtest1
   Hs-Source-Dirs:      src, test
   Main-Is:             SamTest1.hs
   Other-Modules:       Bio.SamTools.LowLevel
+  Build-tools:         c2hs
+  Include-dirs:        /usr/local/include/bam, include
+  C-sources:           cbits/samtools.c
+  Includes:            include/samtools.h
+  Extra-libraries:     bam, z
+
+Executable samtest2
+  Build-depends:       base, bytestring, haskell98
+  Hs-Source-Dirs:      src, test
+  Main-Is:             SamTest2.hs
+  Other-Modules:       Bio.SamTools.LowLevel, Bio.SamTools.Bam
   Build-tools:         c2hs
   Include-dirs:        /usr/local/include/bam, include
   C-sources:           cbits/samtools.c

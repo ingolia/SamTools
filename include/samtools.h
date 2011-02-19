@@ -6,17 +6,17 @@
 bamFile bam_open_(const char *, const char *);
 int bam_close_(bamFile bf);
 
-int bam_fpaired(void);
-int bam_fproper_pair(void);
-int bam_funmap(void);
-int bam_fmunmap(void);
-int bam_freverse(void);
-int bam_fmreverse(void);
-int bam_fread1(void);
-int bam_fread2(void);
-int bam_fsecondary(void);
-int bam_fqcfail(void);
-int bam_fdup(void);
+uint32_t bam_fpaired(void);
+uint32_t bam_fproper_pair(void);
+uint32_t bam_funmap(void);
+uint32_t bam_fmunmap(void);
+uint32_t bam_freverse(void);
+uint32_t bam_fmreverse(void);
+uint32_t bam_fread1(void);
+uint32_t bam_fread2(void);
+uint32_t bam_fsecondary(void);
+uint32_t bam_fqcfail(void);
+uint32_t bam_fdup(void);
 
 uint32_t bam_cmatch(void);
 uint32_t bam_cins(void);

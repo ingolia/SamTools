@@ -12,9 +12,11 @@ module Bio.SamTools.LowLevel ( TamFilePtr
                              , bamHeaderRead, bamHeaderWrite
                              , bamRead1, bamWrite1
                              , Bam1CorePtr
-                             , Bam1Ptr
-                             , bamInit1, bamDestroy1
-                             , sbamOpen, sbamClose, getSbamHeader, sbamRead, sbamWrite
+                             , Bam1Ptr, Bam1Int
+                             , bamInit1, bamDestroy1, bamDestroy1Ptr
+                             , bam1QName
+                             , SamFilePtr, SamFileInt
+                             , sbamOpen, sbamClose, getSbamHeader, sbamRead, sbamWrite                             
                              )
 where
 
@@ -51,68 +53,89 @@ getTargetName = {#get bam_header_t->target_name#}
 getTargetLen :: BamHeaderPtr -> IO (Ptr CUInt)
 getTargetLen = {#get bam_header_t->target_len#}
 
-newtype BamFlag = BamFlag { unBamFlag :: CInt }
+newtype BamFlag = BamFlag { unBamFlag :: CUInt }
                 deriving (Eq, Show, Ord)
 
-bamFPaired :: BamFlag
-bamFPaired = BamFlag {#call pure bam_fpaired#}
+flagPaired :: BamFlag
+flagPaired = BamFlag {#call pure unsafe bam_fpaired#}
 
-bamFProperPair :: BamFlag
-bamFProperPair = BamFlag {#call pure bam_fproper_pair#}
+flagProperPair :: BamFlag
+flagProperPair = BamFlag {#call pure unsafe bam_fproper_pair#}
 
-bamFUnmap :: BamFlag
-bamFUnmap = BamFlag {#call pure bam_funmap#}
+flagUnmap :: BamFlag
+flagUnmap = BamFlag {#call pure unsafe bam_funmap#}
 
-bamFMUnmap :: BamFlag
-bamFMUnmap = BamFlag {#call pure bam_fmunmap#}
+flagMUnmap :: BamFlag
+flagMUnmap = BamFlag {#call pure unsafe bam_fmunmap#}
 
-bamFReverse :: BamFlag
-bamFReverse = BamFlag {#call pure bam_freverse#}
+flagReverse :: BamFlag
+flagReverse = BamFlag {#call pure unsafe bam_freverse#}
 
-bamFMReverse :: BamFlag
-bamFMReverse = BamFlag {#call pure bam_fmreverse#}
+flagMReverse :: BamFlag
+flagMReverse = BamFlag {#call pure unsafe bam_fmreverse#}
 
-bamFRead1 :: BamFlag
-bamFRead1 = BamFlag {#call pure bam_fread1#}
+flagRead1 :: BamFlag
+flagRead1 = BamFlag {#call pure unsafe bam_fread1#}
 
-bamFRead2 :: BamFlag
-bamFRead2 = BamFlag {#call pure bam_fread2#}
+flagRead2 :: BamFlag
+flagRead2 = BamFlag {#call pure unsafe bam_fread2#}
 
-bamFSecondary :: BamFlag
-bamFSecondary = BamFlag {#call pure bam_fsecondary#}
+flagSecondary :: BamFlag
+flagSecondary = BamFlag {#call pure unsafe bam_fsecondary#}
 
-bamFQCFail :: BamFlag
-bamFQCFail = BamFlag {#call pure bam_fqcfail#}
+flagQCFail :: BamFlag
+flagQCFail = BamFlag {#call pure unsafe bam_fqcfail#}
 
-bamFDup :: BamFlag
-bamFDup = BamFlag {#call pure bam_fdup#}
+flagDup :: BamFlag
+flagDup = BamFlag {#call pure unsafe bam_fdup#}
 
 newtype BamCigar = BamCigar { unBamCigar :: CUInt }
                    deriving (Eq, Show, Ord)
                             
-bamCMatch :: BamCigar
-bamCMatch = BamCigar {#call pure bam_cmatch#}
+cigarMatch :: BamCigar
+cigarMatch = BamCigar {#call pure unsafe bam_cmatch#}
 
-bamCIns :: BamCigar
-bamCIns = BamCigar {#call pure bam_cins#}
+cigarIns :: BamCigar
+cigarIns = BamCigar {#call pure unsafe bam_cins#}
 
-bamCDel :: BamCigar
-bamCDel = BamCigar {#call pure bam_cdel#}
+cigarDel :: BamCigar
+cigarDel = BamCigar {#call pure unsafe bam_cdel#}
 
-bamCRefSkip :: BamCigar
-bamCRefSkip = BamCigar {#call pure bam_cref_skip#}
+cigarRefSkip :: BamCigar
+cigarRefSkip = BamCigar {#call pure unsafe bam_cref_skip#}
 
-bamCSoftClip :: BamCigar
-bamCSoftClip = BamCigar {#call pure bam_csoft_clip#}
+cigarSoftClip :: BamCigar
+cigarSoftClip = BamCigar {#call pure unsafe bam_csoft_clip#}
 
-bamCHardClip :: BamCigar
-bamCHardClip = BamCigar {#call pure bam_chard_clip#}
+cigarHardClip :: BamCigar
+cigarHardClip = BamCigar {#call pure unsafe bam_chard_clip#}
 
-bamCPad :: BamCigar
-bamCPad = BamCigar {#call pure bam_cpad#}
+cigarPad :: BamCigar
+cigarPad = BamCigar {#call pure unsafe bam_cpad#}
 
 data Bam1CoreInt
 {#pointer *bam1_core_t as Bam1CorePtr -> Bam1CoreInt#}
+
+getTID :: Bam1CorePtr -> IO Int
+getTID = liftM fromIntegral . {#get bam1_core_t->tid#}
+
+getPos :: Bam1CorePtr -> IO Int
+getPos = liftM fromIntegral . {#get bam1_core_t->pos#}
+
+getFlag :: Bam1CorePtr -> IO CUInt
+getFlag = {#get bam1_core_t->flag#}
+
+getLQSeq :: Bam1CorePtr -> IO Int
+getLQSeq = liftM fromIntegral . {#get bam1_core_t->l_qseq#}
+
+getMTID :: Bam1CorePtr -> IO Int
+getMTID = liftM fromIntegral . {#get bam1_core_t->mtid#}
+
+getMPos :: Bam1CorePtr -> IO Int
+getMPos = liftM fromIntegral . {#get bam1_core_t->mpos#}
+
+getISize :: Bam1CorePtr -> IO Int
+getISize = liftM fromIntegral . {#get bam1_core_t->isize#}
 
 data Bam1Int
 {#pointer *bam1_t as Bam1Ptr -> Bam1Int#}
@@ -190,6 +213,8 @@ data Bam1Int
 {#fun unsafe bam_destroy1_ as bamDestroy1
   { id `Bam1Ptr' } -> `()'#}
 
+foreign import ccall unsafe "samtools.h &bam_destroy1_" bamDestroy1Ptr :: FunPtr (Ptr Bam1Int -> IO ())
+
 -- Unified SAM/BAM I/O
 
 data SamFileInt
@@ -218,3 +243,4 @@ getSbamHeader = {#get samfile_t->header#}
 
 packCString = BS.packCString
 useAsCString = BS.useAsCString
+
