@@ -1,6 +1,6 @@
 Name:                samtools
 Version:             0.0.20110214
-Synopsis:            Low-level binding to the C samtools library
+Synopsis:            Binding to the C samtools library
 License:             BSD3
 License-file:        LICENSE
 Author:              Nicholas Ingolia
@@ -13,7 +13,7 @@ Cabal-version:       >=1.2
 Extra-source-files: cbits, include, samtools-0.1.12a
 
 Library
-  Exposed-modules:     Bio.SamTools.LowLevel, Bio.SamTools.Bam
+  Exposed-modules:     Bio.SamTools.LowLevel, Bio.SamTools.Bam, Bio.SamTools.Cigar
   Other-modules:       C2HS
   Build-depends:       base, bytestring, haskell98, vector >= 0.7
   Hs-Source-Dirs:      src

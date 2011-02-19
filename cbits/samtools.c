@@ -17,6 +17,11 @@ uint32_t bam_fsecondary(void) { return BAM_FSECONDARY; }
 uint32_t bam_fqcfail(void) { return BAM_FQCFAIL; }
 uint32_t bam_fdup(void) { return BAM_FDUP; }
 
+uint32_t bam_cigar_mask(void) { return BAM_CIGAR_MASK; }
+uint32_t bam_cigar_shift(void) { return BAM_CIGAR_SHIFT; }
+uint32_t bam_cigar_op(uint32_t cigar) { return (cigar & BAM_CIGAR_MASK); }
+uint32_t bam_cigar_length(uint32_t cigar) { return (cigar >> BAM_CIGAR_SHIFT); }
+
 uint32_t bam_cmatch(void) { return BAM_CMATCH; }
 uint32_t bam_cins(void) { return BAM_CINS; }
 uint32_t bam_cdel(void) { return BAM_CDEL; }

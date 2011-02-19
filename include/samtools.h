@@ -18,6 +18,10 @@ uint32_t bam_fsecondary(void);
 uint32_t bam_fqcfail(void);
 uint32_t bam_fdup(void);
 
+uint32_t bam_cigar_mask(void);
+uint32_t bam_cigar_shift(void);
+uint32_t bam_cigar_op(uint32_t cigar);
+uint32_t bam_cigar_length(uint32_t cigar);
 uint32_t bam_cmatch(void);
 uint32_t bam_cins(void);
 uint32_t bam_cdel(void);

@@ -5,6 +5,7 @@ import Control.Monad
 import qualified Data.ByteString.Char8 as BS
 
 import qualified Bio.SamTools.Bam as Bam
+import qualified Bio.SamTools.Cigar as Cigar
 
 main :: IO ()
 main = do f <- Bam.openTamInFile "test/test.sam"
@@ -14,4 +15,9 @@ main = do f <- Bam.openTamInFile "test/test.sam"
           Bam.closeInHandle f
           maybe (return ()) (BS.putStrLn . Bam.queryName) b1
           maybe (return ()) (BS.putStrLn . Bam.queryName) b2
-          
+          flip (maybe (return ())) b1 $ \b -> do
+            BS.putStrLn . Bam.queryName $ b
+            print ( Bam.targetID b, Bam.targetName b, Bam.targetLen b)
+            print . Bam.position $ b
+            print ( Bam.queryName b, Bam.queryLength b, Bam.querySeq b)
+            

@@ -1,5 +1,5 @@
 -- -*- haskell -*-
-{-# LANGUAGE ForeignFunctionInterface, EmptyDataDecls #-}
+{-# LANGUAGE ForeignFunctionInterface, EmptyDataDecls, GeneralizedNewtypeDeriving #-}
 
 module Bio.SamTools.LowLevel ( TamFilePtr
                              , samOpen, samClose
@@ -11,10 +11,16 @@ module Bio.SamTools.LowLevel ( TamFilePtr
                              , samRead1
                              , bamHeaderRead, bamHeaderWrite
                              , bamRead1, bamWrite1
-                             , Bam1CorePtr
+                             , BamCigar(..)
+                             , cigarMatch, cigarIns, cigarDel, cigarRefSkip, cigarSoftClip, cigarHardClip, cigarPad
+                             , cigarOp, cigarLength
+                             , BamFlag
+                             , flagPaired, flagProperPair, flagUnmap, flagMUnmap, flagReverse, flagMReverse
+                             , flagRead1, flagRead2, flagSecondary, flagQCFail, flagDup
                              , Bam1Ptr, Bam1Int
+                             , getTID, getPos, getFlag, getNCigar, getLQSeq, getMTID, getMPos, getISize
+                             , bam1Strand, bam1MStrand, bam1Cigar, bam1QName, bam1Seq, bam1Qual, bam1Seqi
                              , bamInit1, bamDestroy1, bamDestroy1Ptr
-                             , bam1QName
                              , SamFilePtr, SamFileInt
                              , sbamOpen, sbamClose, getSbamHeader, sbamRead, sbamWrite                             
                              )
@@ -22,6 +28,7 @@ where
 
 import C2HS
 import Control.Monad
+import Data.Bits
 import qualified Data.ByteString.Char8 as BS
 import Foreign.Ptr
 
@@ -54,7 +61,7 @@ getTargetLen :: BamHeaderPtr -> IO (Ptr CUInt)
 getTargetLen = {#get bam_header_t->target_len#}
 
 newtype BamFlag = BamFlag { unBamFlag :: CUInt }
-                deriving (Eq, Show, Ord)
+                deriving (Eq, Show, Ord, Num, Bits)
 
 flagPaired :: BamFlag
 flagPaired = BamFlag {#call pure unsafe bam_fpaired#}
@@ -113,32 +120,38 @@ cigarHardClip = BamCigar {#call pure unsafe bam_chard_clip#}
 cigarPad :: BamCigar
 cigarPad = BamCigar {#call pure unsafe bam_cpad#}
 
-data Bam1CoreInt
-{#pointer *bam1_core_t as Bam1CorePtr -> Bam1CoreInt#}
+cigarOp :: CUInt -> BamCigar
+cigarOp = BamCigar . {#call pure unsafe bam_cigar_op#}
 
-getTID :: Bam1CorePtr -> IO Int
-getTID = liftM fromIntegral . {#get bam1_core_t->tid#}
-
-getPos :: Bam1CorePtr -> IO Int
-getPos = liftM fromIntegral . {#get bam1_core_t->pos#}
-
-getFlag :: Bam1CorePtr -> IO CUInt
-getFlag = {#get bam1_core_t->flag#}
-
-getLQSeq :: Bam1CorePtr -> IO Int
-getLQSeq = liftM fromIntegral . {#get bam1_core_t->l_qseq#}
-
-getMTID :: Bam1CorePtr -> IO Int
-getMTID = liftM fromIntegral . {#get bam1_core_t->mtid#}
-
-getMPos :: Bam1CorePtr -> IO Int
-getMPos = liftM fromIntegral . {#get bam1_core_t->mpos#}
-
-getISize :: Bam1CorePtr -> IO Int
-getISize = liftM fromIntegral . {#get bam1_core_t->isize#}
+cigarLength :: CUInt -> CUInt
+cigarLength = {#call pure unsafe bam_cigar_length#}
 
 data Bam1Int
 {#pointer *bam1_t as Bam1Ptr -> Bam1Int#}
+
+getTID :: Bam1Ptr -> IO Int
+getTID = liftM fromIntegral . {#get bam1_t->core.tid#}
+
+getPos :: Bam1Ptr -> IO Int
+getPos = liftM fromIntegral . {#get bam1_t->core.pos#}
+
+getFlag :: Bam1Ptr -> IO BamFlag
+getFlag = liftM BamFlag . {#get bam1_t->core.flag#}
+
+getNCigar :: Bam1Ptr -> IO Int
+getNCigar = liftM fromIntegral . {#get bam1_t->core.n_cigar#}
+
+getLQSeq :: Bam1Ptr -> IO Int
+getLQSeq = liftM fromIntegral . {#get bam1_t->core.l_qseq#}
+
+getMTID :: Bam1Ptr -> IO Int
+getMTID = liftM fromIntegral . {#get bam1_t->core.mtid#}
+
+getMPos :: Bam1Ptr -> IO Int
+getMPos = liftM fromIntegral . {#get bam1_t->core.mpos#}
+
+getISize :: Bam1Ptr -> IO Int
+getISize = liftM fromIntegral . {#get bam1_t->core.isize#}
 
 {#fun pure unsafe bam1_strand_ as bam1Strand 
   {id `Bam1Ptr' } -> `Bool'#}
