@@ -7,6 +7,8 @@ module Bio.SamTools.LowLevel ( TamFilePtr
                              , bamOpen, bamClose
                              , BamHeaderPtr
                              , getNTargets, getTargetName, getTargetLen, bamGetTid
+                             , bamHeaderInit, bamHeaderDestroy
+                             , setNTargets, setTargetName, setTargetLen
                              , samHeaderRead, samHeaderRead2                             
                              , samRead1
                              , bamHeaderRead, bamHeaderWrite
@@ -54,11 +56,20 @@ data BamHeaderInt
 getNTargets :: BamHeaderPtr -> IO CInt
 getNTargets = {#get bam_header_t->n_targets#}
 
+setNTargets :: BamHeaderPtr -> CInt -> IO ()
+setNTargets = {#set bam_header_t->n_targets#}
+
 getTargetName :: BamHeaderPtr -> IO (Ptr CString)
 getTargetName = {#get bam_header_t->target_name#}
 
+setTargetName :: BamHeaderPtr -> Ptr CString -> IO ()
+setTargetName = {#set bam_header_t->target_name#}
+
 getTargetLen :: BamHeaderPtr -> IO (Ptr CUInt)
 getTargetLen = {#get bam_header_t->target_len#}
+
+setTargetLen :: BamHeaderPtr -> Ptr CUInt -> IO ()
+setTargetLen = {#set bam_header_t->target_len#}
 
 newtype BamFlag = BamFlag { unBamFlag :: CUInt }
                 deriving (Eq, Show, Ord, Num, Bits)

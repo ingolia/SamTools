@@ -1,5 +1,5 @@
 leftovers-samtools-0.1.12a
-^dist
+(^|/)dist($|/)
 \.AppleDouble
 # Default boring file regexps:
 \.hi$
