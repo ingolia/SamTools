@@ -1,7 +1,7 @@
 Name:                samtools
 Version:             0.0.20110214
 Synopsis:            Binding to the C samtools library
-License:             BSD3
+License:             MIT
 License-file:        LICENSE
 Author:              Nicholas Ingolia
 Maintainer:          nick@ingolia.org
