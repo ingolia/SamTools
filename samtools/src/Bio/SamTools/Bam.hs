@@ -20,6 +20,9 @@ module Bio.SamTools.Bam (
   -- | Target sequence sets
   HeaderSeq(..)
   , Header, nTargets, targetSeqs
+  
+  , convertHeader                    
+  
   -- | SAM/BAM format alignments
   , Bam1
   , targetID, targetName, targetLen, position
@@ -27,6 +30,9 @@ module Bio.SamTools.Bam (
   , isRead1, isRead2, isSecondary, isQCFail, isDup
   , cigars, queryName, queryLength, querySeq
   , mateTargetID, mateTargetName, matePosition, insertSize
+  
+  , new                                              
+    
   -- | Reading SAM/BAM format files
   , InHandle, inHeader
   , openTamInFile, openTamInFileWithIndex, openBamInFile
@@ -45,7 +51,7 @@ import Control.Exception (bracket, bracket_)
 import Control.Monad
 import Data.Bits
 import qualified Data.ByteString.Char8 as BS
-import Foreign
+import Foreign hiding (new)
 import Foreign.C.Types
 import Foreign.C.String
 import Foreign.ForeignPtr
@@ -255,6 +261,10 @@ get1 inh = withMVar (samfile inh) $ \fsam -> do
                 else return Nothing
     else do bptr <- newForeignPtr bamDestroy1Ptr b
             return . Just $ Bam1 { ptrBam1 = bptr, header = inHeader inh }
+
+new :: Bam1Ptr -> Header -> IO Bam1
+new b hdr = do bptr <- bamDup1 b >>= newForeignPtr bamDestroy1Ptr
+               return $ Bam1 { ptrBam1 = bptr, header = hdr }
 
 data OutHandle = OutHandle { outFilename :: !FilePath
                            , outfile :: !(MVar (Ptr SamFileInt))

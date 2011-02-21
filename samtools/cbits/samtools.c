@@ -40,3 +40,5 @@ uint8_t bam1_seqi_(uint8_t *s, int i) { return bam1_seqi(s, i); }
 
 bam1_t *bam_init1_(void) { return bam_init1(); }
 void bam_destroy1_(bam1_t *b) { bam_destroy1(b); }
+
+bam1_t *bam_dup1_(const bam1_t *src) { return bam_dup1(src); }

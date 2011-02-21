@@ -13,7 +13,8 @@ Cabal-version:       >=1.2
 Extra-source-files: cbits, include, samtools-0.1.12a
 
 Library
-  Exposed-modules:     Bio.SamTools.LowLevel, Bio.SamTools.Bam, Bio.SamTools.Cigar
+  Exposed-modules:     Bio.SamTools.LowLevel, Bio.SamTools.Bam, Bio.SamTools.Cigar,
+                       Bio.SamTools.BamIndex, Bio.SamTools.FaIdx
   Other-modules:       C2HS
   Build-depends:       base, bytestring, haskell98, vector >= 0.7
   Hs-Source-Dirs:      src
@@ -62,7 +63,7 @@ Executable samtest2
   Build-depends:       base, bytestring, haskell98
   Hs-Source-Dirs:      src, test
   Main-Is:             SamTest2.hs
-  Other-Modules:       Bio.SamTools.LowLevel, Bio.SamTools.Bam
+  Other-Modules:       Bio.SamTools.LowLevel, Bio.SamTools.Bam, Bio.SamTools.BamIndex
   Build-tools:         c2hs
   Include-dirs:        samtools-0.1.12a, include
   C-sources:           cbits/samtools.c, 
@@ -74,4 +75,5 @@ Executable samtest2
                        samtools-0.1.12a/sam_header.c, samtools-0.1.12a/bam_reheader.c, samtools-0.1.12a/kprobaln.c,
                        samtools-0.1.12a/bam_maqcns.c, samtools-0.1.12a/errmod.c, samtools-0.1.12a/kaln.c
   CC-options:          -g -O2 -D_FILE_OFFSET_BITS=64 -D_USE_KNETFILE -Wno-unused-result
+  GHC-options:         -prof -auto-all
   Extra-libraries:     z

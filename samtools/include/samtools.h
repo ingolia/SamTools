@@ -40,5 +40,6 @@ uint8_t bam1_seqi_(uint8_t *s, int i);
 
 bam1_t *bam_init1_(void);
 void bam_destroy1_(bam1_t *b);
+bam1_t *bam_dup1_(const bam1_t *b);
 
 #endif /* _samtools_h */

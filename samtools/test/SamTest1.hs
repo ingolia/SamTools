@@ -15,7 +15,7 @@ main = do sf <- samOpen "test/test.sam"
 --          names <- getTargetName bhp >>= peekArray ntargets
 --          lens <- getTargetLen bhp >>= peekArray ntargets
 --          zipWithM_ printTargLen names lens
-          bf <- bamOpen "test/test.bam" "w"
+          bf <- bamOpen "test/test1-out.bam" "w"
           bamHeaderWrite bf bhp
           b <- bamInit1
           samRead1 sf bhp b >>= print
@@ -23,7 +23,7 @@ main = do sf <- samOpen "test/test.sam"
           bamDestroy1 b
           bamClose bf
           samClose sf          
-          fin <- sbamOpen "test/test.bam" "rb" nullPtr
+          fin <- sbamOpen "test/test1-out.bam" "rb" nullPtr
           fout <- getSbamHeader fin >>= sbamOpen "test/test-out.sam" "wh" . castPtr
           b' <- bamInit1
           sbamRead fin b'

@@ -3,7 +3,7 @@
 
 module Bio.SamTools.LowLevel ( TamFilePtr
                              , samOpen, samClose
-                             , BamFilePtr
+                             , BamFilePtr, BamFileInt
                              , bamOpen, bamClose
                              , BamHeaderPtr
                              , getNTargets, getTargetName, getTargetLen, bamGetTid
@@ -21,10 +21,15 @@ module Bio.SamTools.LowLevel ( TamFilePtr
                              , flagRead1, flagRead2, flagSecondary, flagQCFail, flagDup
                              , Bam1Ptr, Bam1Int
                              , getTID, getPos, getFlag, getNCigar, getLQSeq, getMTID, getMPos, getISize
-                             , bam1Strand, bam1MStrand, bam1Cigar, bam1QName, bam1Seq, bam1Qual, bam1Seqi
-                             , bamInit1, bamDestroy1, bamDestroy1Ptr
+                             , bam1Strand, bam1MStrand, bam1Cigar, bam1QName, bam1Seq, bam1Qual, bam1Seqi                             
+                             , bamInit1, bamDestroy1, bamDestroy1Ptr, bamDup1
+                             , BamIndexInt, BamIndexPtr
+                             , bamIndexLoad, bamIndexDestroy
+                             , BamFetchFPtr, mkBamFetchFPtr, bamFetch
                              , SamFilePtr, SamFileInt
                              , sbamOpen, sbamClose, getSbamHeader, sbamRead, sbamWrite                             
+                             , FaIdxPtr, FaIdxInt
+                             , faiLoad, faiDestroy, faiFetch
                              )
 where
 
@@ -34,6 +39,7 @@ import Data.Bits
 import qualified Data.ByteString.Char8 as BS
 import Foreign.Ptr
 
+#include "faidx.h"
 #include "sam.h"
 #include "samtools.h"
 
@@ -239,6 +245,30 @@ getISize = liftM fromIntegral . {#get bam1_t->core.isize#}
 
 foreign import ccall unsafe "samtools.h &bam_destroy1_" bamDestroy1Ptr :: FunPtr (Ptr Bam1Int -> IO ())
 
+{#fun unsafe bam_dup1_ as bamDup1
+ { id `Bam1Ptr' } -> `Bam1Ptr' id#}
+
+-- BAM indexing
+
+data BamIndexInt
+{#pointer *bam_index_t as BamIndexPtr -> BamIndexInt#}
+
+{#fun unsafe bam_index_load as bamIndexLoad
+  { `String' } -> `BamIndexPtr' id#}
+
+{#fun unsafe bam_index_destroy as bamIndexDestroy
+  {id `BamIndexPtr' } -> `()'#}
+
+{#pointer bam_fetch_f as BamFetchFPtr#}
+
+foreign import ccall "wrapper"
+  mkBamFetchFPtr :: (Bam1Ptr -> Ptr () -> IO CInt) -> IO (FunPtr (Bam1Ptr ->Ptr () -> IO CInt))
+
+{#fun bam_fetch as bamFetch
+  { id `BamFilePtr', id `BamIndexPtr'
+  , `Int', `Int', `Int'
+  , id `Ptr ()', id `BamFetchFPtr' } -> `Int'#}
+
 -- Unified SAM/BAM I/O
 
 data SamFileInt
@@ -262,6 +292,20 @@ getSbamHeader = {#get samfile_t->header#}
 {#fun unsafe samwrite as sbamWrite
   { id `SamFilePtr'
   , id `Bam1Ptr' } -> `CInt' id#}
+
+-- FASTA Indexing
+
+data FaIdxInt
+{#pointer *faidx_t as FaIdxPtr -> FaIdxInt#}
+
+{#fun unsafe fai_load as faiLoad
+ { `String' } -> `FaIdxPtr' id#}
+
+{#fun unsafe fai_destroy as faiDestroy
+ {id `FaIdxPtr' } -> `()'#}
+
+{#fun unsafe fai_fetch as faiFetch
+ {id `FaIdxPtr', `String', id `Ptr CInt'} -> `CString' id#}
 
 -- Helpers
 
