@@ -1,7 +1,7 @@
 -- | Fetch sequences from an indexed fasta file
 module Bio.SamTools.FaIdx ( InHandle, filename
                           , open
-                          , fetch, fetchRegion
+                          , fetch
                           )
        where
 
@@ -33,22 +33,16 @@ finalizeFaIdx :: MVar (Ptr FaIdxInt) -> IO ()
 finalizeFaIdx mv = modifyMVar mv $ \fai -> do
   unless (fai == nullPtr) $ faiDestroy fai
   return (nullPtr, ())
-  
--- | Fetch a region specified by a string such as
--- @chr2:20,000-30,000@, with 0-based coordinates.
-fetchRegion :: InHandle -> String -> IO BS.ByteString
-fetchRegion inh rgn = withMVar (faidx inh) $ \fai ->
+
+-- | Fetch a region specified by sequence name and coordinates
+fetch :: InHandle -> BS.ByteString -- ^ Sequence name
+         -> (Int, Int) -- ^ (Starting, ending) position, 0-based 
+         -> IO BS.ByteString
+fetch inh name (start, end) = withMVar (faidx inh) $ \fai ->
+  BS.useAsCString name $ \cname ->
   alloca $ \lp -> do
-    s <- faiFetch fai rgn lp
+    s <- faiFetchSeq fai cname start end lp
     l <- liftM fromIntegral . peek $ lp
     sout <- BS.packCStringLen (s, l)
     free s
     return sout
-    
--- | Fetch a region specified by sequence name and coordinates
-fetch :: InHandle -> BS.ByteString -- ^ Sequence name
-         -> Int -- ^ Starting position, 0-based 
-         -> Int -- ^ Length
-         -> IO BS.ByteString
-fetch inh name start len = fetchRegion inh regionstr
-  where regionstr = concat [ BS.unpack name, ":", show start, "-", show $ start + len - 1 ]

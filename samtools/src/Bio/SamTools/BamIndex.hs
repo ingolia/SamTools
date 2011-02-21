@@ -1,3 +1,6 @@
+-- | This module provides an interface to sorted, indexed BAM
+-- alignment files, which allow rapid extraction of alignments that lie
+-- within one specific region of one sequence.
 module Bio.SamTools.BamIndex
        ( 
          Handle, filename, header
@@ -15,11 +18,14 @@ import Foreign.Ptr
 import Bio.SamTools.Bam
 import Bio.SamTools.LowLevel       
        
+-- | Handle for fetching alignments by region from a sorted, indexed
+-- BAM file.
 data Handle = Handle { filename :: !FilePath
                      , bamindex :: !(MVar (Ptr BamFileInt, Ptr BamIndexInt))
                      , header :: !Header
                      }
                      
+-- | Open a sorted, indexed BAM file.              
 open :: FilePath -> IO Handle
 open filename = do
   f <- bamOpen filename "r"
@@ -43,8 +49,13 @@ finalizeBamIndex mv = modifyMVar mv $ \(f, i) -> do
   unless (i == nullPtr) $ bamIndexDestroy i
   return ((nullPtr, nullPtr), ())
 
-fetch :: Handle -> Int -> Int -> Int -> (Bam1 -> IO ()) -> IO Int
-fetch inh tid start end f = withMVar (bamindex inh) $ \(f, i) -> do
+-- | Map an 'IO' action across each alignment falling within a
+-- specified region.
+fetch :: Handle -> Int -- ^ Target ID of the sequence
+         -> (Int, Int) -- ^ (Starting, ending) position on the target sequence, 0-based
+         -> (Bam1 -> IO ()) -- ^ Action to perform
+         -> IO Int
+fetch inh tid (start, end) f = withMVar (bamindex inh) $ \(f, i) -> do
   bracket (mkBamFetchFPtr func) freeHaskellFunPtr $ \fptr ->
     bamFetch f i tid start end nullPtr fptr
       where func :: Bam1Ptr -> Ptr () -> IO CInt

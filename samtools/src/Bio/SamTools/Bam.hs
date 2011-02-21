@@ -19,7 +19,7 @@
 module Bio.SamTools.Bam ( 
   -- | Target sequence sets
   HeaderSeq(..)
-  , Header, nTargets, targetSeqs
+  , Header, nTargets, targetSeqList, targetSeq
   
   , convertHeader                    
   
@@ -78,9 +78,13 @@ newtype Header = Header { unHeader :: V.Vector HeaderSeq } deriving (Eq, Show)
 nTargets :: Header -> Int
 nTargets = V.length . unHeader
 
+-- | Returns the list of target sequences
+targetSeqList :: Header -> [HeaderSeq]
+targetSeqList = V.toList . unHeader
+
 -- | Returns a target sequence by ID, which is a 0-based index
-targetSeqs :: Header -> Int -> Maybe HeaderSeq
-targetSeqs h = (V.!?) (unHeader h)
+targetSeq :: Header -> Int -> Maybe HeaderSeq
+targetSeq h = (V.!?) (unHeader h)
 
 -- | SAM/BAM format alignment
 data Bam1 = Bam1 { ptrBam1 :: !(ForeignPtr Bam1Int)
@@ -217,7 +221,7 @@ newInHandle filename fsam = do
 openTamInFile :: FilePath -> IO InHandle
 openTamInFile filename = sbamOpen filename "r" nullPtr >>= newInHandle filename
   
--- | Open a TAM format file with a separate target sequene set index
+-- | Open a TAM format file with a separate target sequence set index
 openTamInFileWithIndex :: FilePath -> FilePath -> IO InHandle
 openTamInFileWithIndex filename indexname 
   = withCString indexname (sbamOpen filename "r" . castPtr) >>= newInHandle filename
@@ -238,6 +242,7 @@ finalizeSamFile mv = modifyMVar mv $ \fsam -> do
 closeInHandle :: InHandle -> IO ()
 closeInHandle = finalizeSamFile . samfile
 
+-- | Internal utility to copy and convert a raw 'BamHeaderInt' to a 'Header'
 convertHeader :: BamHeaderPtr -> IO Header
 convertHeader bhdr = do
   ntarg <- getNTargets bhdr
@@ -262,10 +267,12 @@ get1 inh = withMVar (samfile inh) $ \fsam -> do
     else do bptr <- newForeignPtr bamDestroy1Ptr b
             return . Just $ Bam1 { ptrBam1 = bptr, header = inHeader inh }
 
+-- | Internal utility to copy and convert a raw 'Bam1Int' to a 'Header'
 new :: Bam1Ptr -> Header -> IO Bam1
 new b hdr = do bptr <- bamDup1 b >>= newForeignPtr bamDestroy1Ptr
                return $ Bam1 { ptrBam1 = bptr, header = hdr }
 
+-- | Handle for writing SAM/BAM format alignments
 data OutHandle = OutHandle { outFilename :: !FilePath
                            , outfile :: !(MVar (Ptr SamFileInt))
                            , outHeader :: !Header -- ^ Target sequence set for the alignments
@@ -289,15 +296,22 @@ newOutHandle mode filename hdr = do
   addMVarFinalizer mv (finalizeSamFile mv)
   return $ OutHandle { outFilename = filename, outfile = mv, outHeader = hdr }
   
+-- | Open a TAM format file with @\@SQ@ headers for writing alignments
 openTamOutFile :: FilePath -> Header -> IO OutHandle
 openTamOutFile = newOutHandle "wh"
 
+-- | Open a BAM format file for writing alignments
 openBamOutFile :: FilePath -> Header -> IO OutHandle
 openBamOutFile = newOutHandle "wb"
   
+-- | Close an alignment output handle
 closeOutHandle :: OutHandle -> IO ()
 closeOutHandle = finalizeSamFile . outfile
 
+-- | Writes one alignment to an input handle.
+-- 
+-- There is no validation that the target sequence set of the output
+-- handle matches the target sequence set of the alignment.
 put1 :: OutHandle -> Bam1 -> IO ()
 put1 outh b = withMVar (outfile outh) $ \fsam -> 
   withForeignPtr (ptrBam1 b) $ \p ->

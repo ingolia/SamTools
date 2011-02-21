@@ -29,7 +29,7 @@ module Bio.SamTools.LowLevel ( TamFilePtr
                              , SamFilePtr, SamFileInt
                              , sbamOpen, sbamClose, getSbamHeader, sbamRead, sbamWrite                             
                              , FaIdxPtr, FaIdxInt
-                             , faiLoad, faiDestroy, faiFetch
+                             , faiLoad, faiDestroy, faiFetchSeq
                              )
 where
 
@@ -304,8 +304,10 @@ data FaIdxInt
 {#fun unsafe fai_destroy as faiDestroy
  {id `FaIdxPtr' } -> `()'#}
 
-{#fun unsafe fai_fetch as faiFetch
- {id `FaIdxPtr', `String', id `Ptr CInt'} -> `CString' id#}
+{#fun unsafe faidx_fetch_seq as faiFetchSeq
+ {id `FaIdxPtr'
+ ,id `CString' , `Int', `Int'
+ , id `Ptr CInt' } -> `CString' id#}
 
 -- Helpers
 
