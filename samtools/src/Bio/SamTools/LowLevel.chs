@@ -25,6 +25,8 @@ module Bio.SamTools.LowLevel ( TamFilePtr
                              , bamInit1, bamDestroy1, bamDestroy1Ptr, bamDup1
                              , BamIndexInt, BamIndexPtr
                              , bamIndexLoad, bamIndexDestroy
+                             , BamIterInt, BamIterPtr
+                             , bamIterQuery, bamIterRead, bamIterDestroy
                              , BamFetchFPtr, mkBamFetchFPtr, bamFetch
                              , SamFilePtr, SamFileInt
                              , sbamOpen, sbamClose, getSbamHeader, sbamRead, sbamWrite                             
@@ -268,6 +270,18 @@ foreign import ccall "wrapper"
   { id `BamFilePtr', id `BamIndexPtr'
   , `Int', `Int', `Int'
   , id `Ptr ()', id `BamFetchFPtr' } -> `Int'#}
+
+data BamIterInt
+{#pointer bam_iter_t as BamIterPtr -> BamIterInt#}
+
+{#fun unsafe bam_iter_query as bamIterQuery
+  {id `BamIndexPtr', `Int', `Int', `Int'} -> `BamIterPtr' id#}
+
+{#fun unsafe bam_iter_read as bamIterRead
+  {id `BamFilePtr', id `BamIterPtr', id `Bam1Ptr'} -> `CInt' id#}
+
+{#fun unsafe bam_iter_destroy as bamIterDestroy
+  {id `BamIterPtr'} -> `()' id#}
 
 -- Unified SAM/BAM I/O
 

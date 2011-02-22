@@ -42,11 +42,13 @@ convertSamToBam inname outname = do
 extractActin :: FilePath -> String -> FilePath -> IO ()
 extractActin inname seqname outname = do
   i <- BamIndex.open inname 
-  let (tid, start, end) = lookupSeq (BamIndex.header i) seqname
-  o <- Bam.openTamOutFile outname (BamIndex.header i)
-  BamIndex.fetch i tid (start, end) (Bam.put1 o) >>= print
+  let (tid, start, end) = lookupSeq (BamIndex.idxHeader i) seqname
+  o <- Bam.openTamOutFile outname (BamIndex.idxHeader i)
+  q <- BamIndex.query i tid (start, end)
+  loop q (Bam.put1 o)
   Bam.closeOutHandle o  
-  
+    where loop q m = BamIndex.next q >>= maybe (return ()) (\b -> m b >> loop q m)
+
 lookupSeq :: Bam.Header -> String -> (Int, Int, Int)
 lookupSeq hdr n = let isWanted = maybe False ((== BS.pack n) . Bam.name) . Bam.targetSeq hdr
                   in case filter isWanted [0..(Bam.nTargets hdr - 1)] of

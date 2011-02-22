@@ -30,8 +30,6 @@ module Bio.SamTools.Bam (
   , isRead1, isRead2, isSecondary, isQCFail, isDup
   , cigars, queryName, queryLength, querySeq
   , mateTargetID, mateTargetName, matePosition, insertSize
-  
-  , new                                              
     
   -- | Reading SAM/BAM format files
   , InHandle, inHeader
@@ -62,17 +60,8 @@ import Foreign.Storable
 import qualified Data.Vector as V
 
 import Bio.SamTools.Cigar
+import Bio.SamTools.Internal
 import Bio.SamTools.LowLevel
-
--- | Information about one target sequence in a SAM alignment set
-data HeaderSeq = HeaderSeq { -- | Target sequence name 
-                             name :: !BS.ByteString
-                             -- | Target sequence lengh
-                           , len :: !Int 
-                           } deriving (Eq, Show, Ord)
-
--- | Target sequences from a SAM alignment set
-newtype Header = Header { unHeader :: V.Vector HeaderSeq } deriving (Eq, Show)
 
 -- | Number of target sequences
 nTargets :: Header -> Int
@@ -86,11 +75,6 @@ targetSeqList = V.toList . unHeader
 targetSeq :: Header -> Int -> Maybe HeaderSeq
 targetSeq h = (V.!?) (unHeader h)
 
--- | SAM/BAM format alignment
-data Bam1 = Bam1 { ptrBam1 :: !(ForeignPtr Bam1Int)
-                 , header :: !Header
-                 }
-            
 -- | Target sequence ID in the target set
 targetID :: Bam1 -> Int
 targetID b = unsafePerformIO $ withForeignPtr (ptrBam1 b) getTID
@@ -242,18 +226,6 @@ finalizeSamFile mv = modifyMVar mv $ \fsam -> do
 closeInHandle :: InHandle -> IO ()
 closeInHandle = finalizeSamFile . samfile
 
--- | Internal utility to copy and convert a raw 'BamHeaderInt' to a 'Header'
-convertHeader :: BamHeaderPtr -> IO Header
-convertHeader bhdr = do
-  ntarg <- getNTargets bhdr
-  names <- getTargetName bhdr
-  lens <- getTargetLen bhdr
-  hseqs <- forM [0..((fromIntegral ntarg)-1)] $ \idx -> do
-    h <- peek (advancePtr names idx) >>= BS.packCString
-    l <- peek (advancePtr lens idx)
-    return $ HeaderSeq h (fromIntegral l)
-  return . Header $! V.fromList hseqs
-  
 -- | Reads one alignment from an input handle, or returns @Nothing@ for end-of-file
 get1 :: InHandle -> IO (Maybe Bam1)
 get1 inh = withMVar (samfile inh) $ \fsam -> do
@@ -266,11 +238,6 @@ get1 inh = withMVar (samfile inh) $ \fsam -> do
                 else return Nothing
     else do bptr <- newForeignPtr bamDestroy1Ptr b
             return . Just $ Bam1 { ptrBam1 = bptr, header = inHeader inh }
-
--- | Internal utility to copy and convert a raw 'Bam1Int' to a 'Header'
-new :: Bam1Ptr -> Header -> IO Bam1
-new b hdr = do bptr <- bamDup1 b >>= newForeignPtr bamDestroy1Ptr
-               return $ Bam1 { ptrBam1 = bptr, header = hdr }
 
 -- | Handle for writing SAM/BAM format alignments
 data OutHandle = OutHandle { outFilename :: !FilePath

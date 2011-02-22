@@ -1,5 +1,5 @@
 Name:                samtools
-Version:             0.0.20110214
+Version:             0.1
 Synopsis:            Binding to the C samtools library
 License:             MIT
 License-file:        LICENSE
@@ -13,9 +13,9 @@ Cabal-version:       >=1.2
 Extra-source-files: cbits, include, samtools-0.1.12a
 
 Library
-  Exposed-modules:     Bio.SamTools.LowLevel, Bio.SamTools.Bam, Bio.SamTools.Cigar,
+  Exposed-modules:     Bio.SamTools.Bam, Bio.SamTools.Cigar,
                        Bio.SamTools.BamIndex, Bio.SamTools.FaIdx
-  Other-modules:       C2HS
+  Other-modules:       Bio.SamTools.LowLevel, Bio.SamTools.Internal, C2HS
   Build-depends:       base, bytestring, haskell98, vector >= 0.7
   Hs-Source-Dirs:      src
   Build-tools:         c2hs
@@ -28,52 +28,10 @@ Library
                        samtools-0.1.12a/faidx.c, samtools-0.1.12a/knetfile.c, samtools-0.1.12a/bam_sort.c,
                        samtools-0.1.12a/sam_header.c, samtools-0.1.12a/bam_reheader.c, samtools-0.1.12a/kprobaln.c,
                        samtools-0.1.12a/bam_maqcns.c, samtools-0.1.12a/errmod.c, samtools-0.1.12a/kaln.c
-  -- Includes:            include/samtools.h,
-  --                      samtools-0.1.12a/bam.h, samtools-0.1.12a/bam_endian.h, samtools-0.1.12a/faidx.h, 
-  --                      samtools-0.1.12a/glf.h, samtools-0.1.12a/khash.h,
-  --                      samtools-0.1.12a/kseq.h, samtools-0.1.12a/ksort.h, samtools-0.1.12a/kstring.h,
-  --                      samtools-0.1.12a/razf.h, samtools-0.1.12a/sam.h, samtools-0.1.12a/sam_header.h
   Install-includes:    include/samtools.h,
                        samtools-0.1.12a/bam.h, samtools-0.1.12a/bam_endian.h, samtools-0.1.12a/faidx.h, 
                        samtools-0.1.12a/glf.h, samtools-0.1.12a/khash.h,
                        samtools-0.1.12a/kseq.h, samtools-0.1.12a/ksort.h, samtools-0.1.12a/kstring.h,
                        samtools-0.1.12a/razf.h, samtools-0.1.12a/sam.h, samtools-0.1.12a/sam_header.h
   CC-options:          -g -O2 -D_FILE_OFFSET_BITS=64 -D_USE_KNETFILE -Wno-unused-result
-  Extra-libraries:     z
-
-Executable samtest1
-  Build-depends:       base, bytestring, haskell98
-  Hs-Source-Dirs:      src, test
-  Main-Is:             SamTest1.hs
-  Other-Modules:       Bio.SamTools.LowLevel
-  Build-tools:         c2hs
-  Include-dirs:        samtools-0.1.12a, include
-  C-sources:           cbits/samtools.c, 
-                       samtools-0.1.12a/bgzf.c, samtools-0.1.12a/kstring.c, samtools-0.1.12a/bam_aux.c, 
-                       samtools-0.1.12a/bam.c, samtools-0.1.12a/bam_import.c, samtools-0.1.12a/sam.c,
-                       samtools-0.1.12a/bam_index.c, samtools-0.1.12a/bam_pileup.c, samtools-0.1.12a/bam_lpileup.c,
-                       samtools-0.1.12a/bam_md.c, samtools-0.1.12a/glf.c, samtools-0.1.12a/razf.c,
-                       samtools-0.1.12a/faidx.c, samtools-0.1.12a/knetfile.c, samtools-0.1.12a/bam_sort.c,
-                       samtools-0.1.12a/sam_header.c, samtools-0.1.12a/bam_reheader.c, samtools-0.1.12a/kprobaln.c,
-                       samtools-0.1.12a/bam_maqcns.c, samtools-0.1.12a/errmod.c, samtools-0.1.12a/kaln.c
-  CC-options:          -g -O2 -D_FILE_OFFSET_BITS=64 -D_USE_KNETFILE -Wno-unused-result
-  Extra-libraries:     z
-
-Executable samtest2
-  Build-depends:       base, bytestring, haskell98
-  Hs-Source-Dirs:      src, test
-  Main-Is:             SamTest2.hs
-  Other-Modules:       Bio.SamTools.LowLevel, Bio.SamTools.Bam, Bio.SamTools.BamIndex
-  Build-tools:         c2hs
-  Include-dirs:        samtools-0.1.12a, include
-  C-sources:           cbits/samtools.c, 
-                       samtools-0.1.12a/bgzf.c, samtools-0.1.12a/kstring.c, samtools-0.1.12a/bam_aux.c, 
-                       samtools-0.1.12a/bam.c, samtools-0.1.12a/bam_import.c, samtools-0.1.12a/sam.c,
-                       samtools-0.1.12a/bam_index.c, samtools-0.1.12a/bam_pileup.c, samtools-0.1.12a/bam_lpileup.c,
-                       samtools-0.1.12a/bam_md.c, samtools-0.1.12a/glf.c, samtools-0.1.12a/razf.c,
-                       samtools-0.1.12a/faidx.c, samtools-0.1.12a/knetfile.c, samtools-0.1.12a/bam_sort.c,
-                       samtools-0.1.12a/sam_header.c, samtools-0.1.12a/bam_reheader.c, samtools-0.1.12a/kprobaln.c,
-                       samtools-0.1.12a/bam_maqcns.c, samtools-0.1.12a/errmod.c, samtools-0.1.12a/kaln.c
-  CC-options:          -g -O2 -D_FILE_OFFSET_BITS=64 -D_USE_KNETFILE -Wno-unused-result
-  GHC-options:         -prof -auto-all
   Extra-libraries:     z
