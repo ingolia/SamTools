@@ -25,8 +25,8 @@ import qualified Data.Enumerator as E
 enumInHandle :: (MonadIO m) => Bam.InHandle -> E.Enumerator Bam.Bam1 m a
 enumInHandle inh = loop
   where loop (E.Continue k) = (liftIO $ Bam.get1 inh) >>= maybe eof next
-          where eof = k E.EOF
-                next b = k (E.Chunks [b])
+          where eof = E.returnI (E.Continue k)
+                next b = k (E.Chunks [b]) E.>>== loop
         loop step = E.returnI step
 
 -- | Enumerate over the contents of a TAM (tab-delimited text) alignment file
@@ -49,8 +49,8 @@ enumBam inname step = E.Iteratee $ liftIO $ bracket (Bam.openBamInFile inname) B
 enumQuery :: BamIndex.Query -> E.Enumerator Bam.Bam1 IO a
 enumQuery q = loop
   where loop (E.Continue k) = (liftIO $ BamIndex.next q) >>= maybe end next
-            where end = k E.EOF
-                  next b = k (E.Chunks [b])
+            where end = E.returnI (E.Continue k)
+                  next b = k (E.Chunks [b]) E.>>== loop
         loop step = E.returnI step
         
 -- | Enumerate over the reads in a region from an indexed BAM file input handle
