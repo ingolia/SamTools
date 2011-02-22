@@ -19,7 +19,7 @@
 module Bio.SamTools.Bam ( 
   -- | Target sequence sets
   HeaderSeq(..)
-  , Header, nTargets, targetSeqList, targetSeq, targetSeqName, targetSeqLen
+  , Header, nTargets, targetSeqList, targetSeq, targetSeqName, targetSeqLen, lookupTarget
   
   -- | SAM/BAM format alignments
   , Bam1

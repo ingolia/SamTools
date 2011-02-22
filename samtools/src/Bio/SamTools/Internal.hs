@@ -38,6 +38,7 @@ newHeader bhp0 = do
   setTargetName bhp' name'
   setTargetLen bhp' len'
   setNTargets bhp' $ fromIntegral ntarg
+  bamInitHeaderHash bhp'
   hdr' <- newForeignPtr bamHeaderDestroyPtr bhp'
   return $ Header hdr'
   
@@ -84,6 +85,12 @@ targetSeqLen h idx = unsafePerformIO $ withForeignPtr (unHeader h) $ \bhdr -> do
     "Target id " ++ show idx ++ " out of bounds " ++ show (0, ntarg-1)
   lens <- getTargetLen bhdr
   liftM fromIntegral . peek $ advancePtr lens idx
+
+lookupTarget :: Header -> BS.ByteString -> Maybe Int
+lookupTarget h name = unsafePerformIO $ withForeignPtr (unHeader h) $ \bhdr ->
+  liftM handleResult . bamGetTid bhdr $ name
+    where handleResult res | res < 0 = Nothing    
+                           | otherwise = Just res
 
 -- withHeader :: Header -> (BamHeaderPtr -> IO a) -> IO a
 -- withHeader (Header hdr) m = bracket bamHeaderInit bamHeaderDestroy $ \bhdr -> 

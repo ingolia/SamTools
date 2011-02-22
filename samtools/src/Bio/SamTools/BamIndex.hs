@@ -39,6 +39,7 @@ open filename = do
     $ "Error opening index for BAM file " ++ show filename
   mv <- newMVar (f, i)
   bhdr <- bamHeaderRead f
+  bamInitHeaderHash bhdr
   addMVarFinalizer mv (finalizeBamIndex mv)
   hdr <- liftM Header . newForeignPtr bamHeaderDestroyPtr $ bhdr
   return $ IdxHandle { idxFilename = filename

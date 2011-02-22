@@ -50,9 +50,6 @@ extractActin inname seqname outname = do
     where loop q m = BamIndex.next q >>= maybe (return ()) (\b -> m b >> loop q m)
 
 lookupSeq :: Bam.Header -> String -> (Int, Int, Int)
-lookupSeq hdr n = let isWanted = (== BS.pack n) . Bam.name . Bam.targetSeq hdr
-                  in case filter isWanted [0..(Bam.nTargets hdr - 1)] of
-                    [tid] -> let hs = Bam.targetSeq hdr tid
-                             in (tid, 0, (Bam.len hs - 1))
-                    tids -> error $ show n ++ " -> target IDs " ++ show tids 
- 
+lookupSeq h n = maybe noTarget handleTid . Bam.lookupTarget h . BS.pack $ n
+  where noTarget = error $ "No target ID for sequence " ++ show n
+        handleTid tid = (tid, 0, Bam.targetSeqLen h tid - 1)

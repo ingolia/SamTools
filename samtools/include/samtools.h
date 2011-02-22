@@ -42,4 +42,6 @@ bam1_t *bam_init1_(void);
 void bam_destroy1_(bam1_t *b);
 bam1_t *bam_dup1_(const bam1_t *b);
 
+void bam_init_header_hash(bam_header_t *header);
+
 #endif /* _samtools_h */

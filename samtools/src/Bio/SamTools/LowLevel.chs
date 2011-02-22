@@ -7,7 +7,7 @@ module Bio.SamTools.LowLevel ( TamFilePtr
                              , bamOpen, bamClose
                              , BamHeaderPtr, BamHeaderInt
                              , getNTargets, getTargetName, getTargetLen, bamGetTid
-                             , bamHeaderInit, bamHeaderDestroy, bamHeaderDestroyPtr
+                             , bamHeaderInit, bamHeaderDestroy, bamHeaderDestroyPtr, bamInitHeaderHash
                              , setNTargets, setTargetName, setTargetLen
                              , samHeaderRead, samHeaderRead2                             
                              , samRead1
@@ -232,6 +232,9 @@ foreign import ccall unsafe "bam.h &bam_header_destroy" bamHeaderDestroyPtr :: F
 {#fun unsafe bam_header_write as bamHeaderWrite
   { id `BamFilePtr'
   , id `BamHeaderPtr' } -> `CInt' id#}
+
+{#fun unsafe bam_init_header_hash as bamInitHeaderHash
+  { id `BamHeaderPtr' } -> `()' id#}
 
 {#fun unsafe bam_read1 as bamRead1
   { id `BamFilePtr' 
