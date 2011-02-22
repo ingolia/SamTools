@@ -19,9 +19,7 @@
 module Bio.SamTools.Bam ( 
   -- | Target sequence sets
   HeaderSeq(..)
-  , Header, nTargets, targetSeqList, targetSeq
-  
-  , convertHeader                    
+  , Header, nTargets, targetSeqList, targetSeq, targetSeqName, targetSeqLen
   
   -- | SAM/BAM format alignments
   , Bam1
@@ -63,29 +61,17 @@ import Bio.SamTools.Cigar
 import Bio.SamTools.Internal
 import Bio.SamTools.LowLevel
 
--- | Number of target sequences
-nTargets :: Header -> Int
-nTargets = V.length . unHeader
-
--- | Returns the list of target sequences
-targetSeqList :: Header -> [HeaderSeq]
-targetSeqList = V.toList . unHeader
-
--- | Returns a target sequence by ID, which is a 0-based index
-targetSeq :: Header -> Int -> Maybe HeaderSeq
-targetSeq h = (V.!?) (unHeader h)
-
 -- | Target sequence ID in the target set
 targetID :: Bam1 -> Int
 targetID b = unsafePerformIO $ withForeignPtr (ptrBam1 b) getTID
 
 -- | Target sequence name
 targetName :: Bam1 -> BS.ByteString
-targetName b = name $ (unHeader . header $ b) V.! (targetID b)
+targetName b = targetSeqName (header b) (targetID b)
 
 -- | Total length of the target sequence
 targetLen :: Bam1 -> Int
-targetLen b = len $ (unHeader . header $ b) V.! (targetID b)
+targetLen b = targetSeqLen (header b) (targetID b)
 
 -- | 0-based index of the leftmost aligned position on the target sequence
 position :: Bam1 -> Int
@@ -171,11 +157,11 @@ mateTargetID b = unsafePerformIO $ withForeignPtr (ptrBam1 b) getMTID
 
 -- | Name of the mate alignment target sequence
 mateTargetName :: Bam1 -> BS.ByteString
-mateTargetName b = name $ (unHeader . header $ b) V.! (mateTargetID b)
+mateTargetName b = targetSeqName (header b) (mateTargetID b)
 
 -- | Overall length of the mate alignment target sequence
 mateTargetLen :: Bam1 -> Int
-mateTargetLen b = len $ (unHeader . header $ b) V.! (mateTargetID b)
+mateTargetLen b = targetSeqLen (header b) (mateTargetID b)
 
 -- | 0-based coordinate of the left-most position in the mate alignment on the target
 matePosition :: Bam1 -> Int
@@ -197,7 +183,7 @@ newInHandle filename fsam = do
   mv <- newMVar fsam
   addMVarFinalizer mv (finalizeSamFile mv)
   bhdr <- getSbamHeader fsam
-  hdr <- convertHeader bhdr
+  hdr <- newHeader bhdr
   return $ InHandle { inFilename = filename, samfile = mv, inHeader = hdr }  
 
 -- | Open a TAM (tab-delimited text) format file with @\@SQ@ headers
@@ -245,19 +231,9 @@ data OutHandle = OutHandle { outFilename :: !FilePath
                            , outHeader :: !Header -- ^ Target sequence set for the alignments
                            }
 
-withHeader :: Header -> (BamHeaderPtr -> IO a) -> IO a
-withHeader (Header hdr) m = bracket bamHeaderInit bamHeaderDestroy $ \bhdr -> 
-  withMany BS.useAsCString (V.toList . V.map name $ hdr) $ \namelist ->
-  withArray namelist $ \names ->
-  withArray (V.toList . V.map (fromIntegral . len) $ hdr) $ \lens -> 
-  bracket_ (setNTargets bhdr . fromIntegral . V.length $ hdr) (setNTargets bhdr 0) $ 
-  bracket_ (setTargetName bhdr names) (setTargetName bhdr nullPtr) $
-  bracket_ (setTargetLen bhdr lens) (setTargetLen bhdr nullPtr) $
-  m bhdr
-
 newOutHandle :: String -> FilePath -> Header -> IO OutHandle
 newOutHandle mode filename hdr = do
-  fsam <- withHeader hdr $ sbamOpen filename mode . castPtr
+  fsam <- withForeignPtr (unHeader hdr) $ sbamOpen filename mode . castPtr
   when (fsam == nullPtr) $ ioError . userError $ "Error opening BAM file " ++ show filename
   mv <- newMVar fsam
   addMVarFinalizer mv (finalizeSamFile mv)

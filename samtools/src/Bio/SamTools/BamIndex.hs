@@ -40,7 +40,7 @@ open filename = do
   mv <- newMVar (f, i)
   bhdr <- bamHeaderRead f
   addMVarFinalizer mv (finalizeBamIndex mv)
-  hdr <- convertHeader bhdr
+  hdr <- liftM Header . newForeignPtr bamHeaderDestroyPtr $ bhdr
   return $ IdxHandle { idxFilename = filename
                      , bamindex = mv
                      , idxHeader = hdr

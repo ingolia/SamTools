@@ -5,9 +5,9 @@ module Bio.SamTools.LowLevel ( TamFilePtr
                              , samOpen, samClose
                              , BamFilePtr, BamFileInt
                              , bamOpen, bamClose
-                             , BamHeaderPtr
+                             , BamHeaderPtr, BamHeaderInt
                              , getNTargets, getTargetName, getTargetLen, bamGetTid
-                             , bamHeaderInit, bamHeaderDestroy
+                             , bamHeaderInit, bamHeaderDestroy, bamHeaderDestroyPtr
                              , setNTargets, setTargetName, setTargetLen
                              , samHeaderRead, samHeaderRead2                             
                              , samRead1
@@ -21,8 +21,8 @@ module Bio.SamTools.LowLevel ( TamFilePtr
                              , flagRead1, flagRead2, flagSecondary, flagQCFail, flagDup
                              , Bam1Ptr, Bam1Int
                              , getTID, getPos, getFlag, getNCigar, getLQSeq, getMTID, getMPos, getISize
-                             , bam1Strand, bam1MStrand, bam1Cigar, bam1QName, bam1Seq, bam1Qual, bam1Seqi                             
-                             , bamInit1, bamDestroy1, bamDestroy1Ptr, bamDup1
+                             , bam1Strand, bam1MStrand, bam1Cigar, bam1QName, bam1Seq, bam1Qual, bam1Seqi
+                             , bamInit1, bamDestroy1, bamDestroy1Ptr, bamDup1, bamFormat1
                              , BamIndexInt, BamIndexPtr
                              , bamIndexLoad, bamIndexDestroy
                              , BamIterInt, BamIterPtr
@@ -224,6 +224,8 @@ getISize = liftM fromIntegral . {#get bam1_t->core.isize#}
 {#fun unsafe bam_header_destroy as bamHeaderDestroy
   {id `BamHeaderPtr' } -> `()'#}
 
+foreign import ccall unsafe "bam.h &bam_header_destroy" bamHeaderDestroyPtr :: FunPtr (Ptr BamHeaderInt -> IO ())
+
 {#fun unsafe bam_header_read as bamHeaderRead
   {id `BamFilePtr'} -> `BamHeaderPtr' id#}
 
@@ -249,6 +251,9 @@ foreign import ccall unsafe "samtools.h &bam_destroy1_" bamDestroy1Ptr :: FunPtr
 
 {#fun unsafe bam_dup1_ as bamDup1
  { id `Bam1Ptr' } -> `Bam1Ptr' id#}
+
+{#fun unsafe bam_format1 as bamFormat1
+ { id `BamHeaderPtr', id `Bam1Ptr' } -> `CString' id#}
 
 -- BAM indexing
 
