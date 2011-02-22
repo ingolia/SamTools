@@ -112,5 +112,11 @@ data Bam1 = Bam1 { ptrBam1 :: !(ForeignPtr Bam1Int)
                  , header :: !Header
                  }
 
---instance Show Bam1 where
---  show b = with
+instance Show Bam1 where
+  show b = unsafePerformIO $ 
+           withForeignPtr (ptrBam1 b) $ \bp ->
+           withForeignPtr (unHeader . header $ b) $ \hp -> do
+             n <- bamFormat1 hp bp
+             n' <- peekCString n
+             free n
+             return n'
