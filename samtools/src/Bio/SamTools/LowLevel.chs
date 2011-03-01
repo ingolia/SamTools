@@ -5,24 +5,31 @@ module Bio.SamTools.LowLevel ( TamFilePtr
                              , samOpen, samClose
                              , BamFilePtr, BamFileInt
                              , bamOpen, bamClose
+                             
                              , BamHeaderPtr, BamHeaderInt
                              , getNTargets, getTargetName, getTargetLen, bamGetTid
                              , bamHeaderInit, bamHeaderDestroy, bamHeaderDestroyPtr, bamInitHeaderHash
                              , setNTargets, setTargetName, setTargetLen
+                             
                              , samHeaderRead, samHeaderRead2                             
                              , samRead1
+                             
                              , bamHeaderRead, bamHeaderWrite
                              , bamRead1, bamWrite1
-                             , BamCigar(..)
+                             , BamCigar(..)                             
                              , cigarMatch, cigarIns, cigarDel, cigarRefSkip, cigarSoftClip, cigarHardClip, cigarPad
                              , cigarOp, cigarLength
-                             , BamFlag
+                             , BamFlag(..)
                              , flagPaired, flagProperPair, flagUnmap, flagMUnmap, flagReverse, flagMReverse
                              , flagRead1, flagRead2, flagSecondary, flagQCFail, flagDup
                              , Bam1Ptr, Bam1Int
                              , getTID, getPos, getFlag, getNCigar, getLQSeq, getMTID, getMPos, getISize
                              , bam1Strand, bam1MStrand, bam1Cigar, bam1QName, bam1Seq, bam1Qual, bam1Seqi
+                                                                                                                             
+                             , bamAuxGet, bamAux2Z, bamAux2i --, bamAux2f, bamAux2d, bamAux2A
+                                                                                                 
                              , bamInit1, bamDestroy1, bamDestroy1Ptr, bamDup1, bamFormat1
+                             
                              , BamIndexInt, BamIndexPtr
                              , bamIndexLoad, bamIndexDestroy
                              , BamIterInt, BamIterPtr
@@ -37,9 +44,7 @@ where
 
 import C2HS
 import Control.Monad
-import Data.Bits
 import qualified Data.ByteString.Char8 as BS
-import Foreign.Ptr
 
 #include "faidx.h"
 #include "sam.h"
@@ -244,6 +249,16 @@ foreign import ccall unsafe "bam.h &bam_header_destroy" bamHeaderDestroyPtr :: F
   { id `BamFilePtr' 
   , id `Bam1Ptr' } -> `CInt' id#}
 
+{#fun unsafe bam_aux_get as bamAuxGet
+  { id `Bam1Ptr'
+  , id `CString' } -> `Ptr CUChar' id#}
+
+{#fun unsafe bam_aux2Z as bamAux2Z
+  { id `Ptr CUChar' } -> `CString' id#}
+
+{#fun unsafe bam_aux2i as bamAux2i
+  { id `Ptr CUChar' } -> `Int'#}
+
 {#fun unsafe bam_init1_ as bamInit1
   { } -> `Bam1Ptr' id#}
 
@@ -333,6 +348,9 @@ data FaIdxInt
 
 -- Helpers
 
+packCString :: CString -> IO BS.ByteString
 packCString = BS.packCString
+
+useAsCString :: BS.ByteString -> (CString -> IO a) -> IO a
 useAsCString = BS.useAsCString
 

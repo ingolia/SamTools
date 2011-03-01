@@ -86,7 +86,6 @@ parseBam hdr b = mapM_ verify [ (Bam.queryName b, bamfields !! 0)
                               , (Bam.targetName b, bamfields !! 2)
                               , (BS.pack . show . succ . Bam.position $ b, bamfields !! 3)                              
                               , (Bam.querySeq b, bamfields !! 9) 
-                              , (BS.pack . show . queryLength b, BS.pack . show . targetLen hdr . targetID b)
                               ]
   where bamfields = BS.split '\t' . BS.pack . show $ b
         verify (s1, s2) | s1 == s2 = return ()

@@ -27,8 +27,10 @@ module Bio.SamTools.Bam (
   , isPaired, isProperPair, isUnmap, isMateUnmap, isReverse, isMateReverse
   , isRead1, isRead2, isSecondary, isQCFail, isDup
   , cigars, queryName, queryLength, querySeq
-  , mateTargetID, mateTargetName, matePosition, insertSize
+  , mateTargetID, mateTargetName, mateTargetLen, matePosition, insertSize
     
+  , nMismatch, nHits, matchDesc                                                               
+                                                               
   -- | Reading SAM/BAM format files
   , InHandle, inHeader
   , openTamInFile, openTamInFileWithIndex, openBamInFile
@@ -43,17 +45,12 @@ module Bio.SamTools.Bam (
        where
 
 import Control.Concurrent.MVar
-import Control.Exception (bracket, bracket_)
 import Control.Monad
 import Data.Bits
 import qualified Data.ByteString.Char8 as BS
 import Foreign hiding (new)
 import Foreign.C.Types
 import Foreign.C.String
-import Foreign.ForeignPtr
-import Foreign.Marshal.Array
-import Foreign.Ptr
-import Foreign.Storable
 
 import qualified Data.Vector as V
 
@@ -171,6 +168,33 @@ matePosition b = unsafePerformIO $ withForeignPtr (ptrBam1 b) getMPos
 insertSize :: Bam1 -> Int
 insertSize b = unsafePerformIO $ withForeignPtr (ptrBam1 b) getISize
 
+matchDesc :: Bam1 -> Maybe BS.ByteString
+matchDesc b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
+  withCAString "MD" $ \mdstr -> 
+  do md <- bamAuxGet p mdstr
+     if md == nullPtr
+        then return Nothing
+        else do cstr <- bamAux2Z md
+                if cstr == nullPtr
+                   then return Nothing
+                   else liftM Just . BS.packCString $ cstr
+
+nHits :: Bam1 -> Maybe Int
+nHits b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
+  withCAString "NH" $ \nhstr ->
+  do nh <- bamAuxGet p nhstr
+     if nh == nullPtr
+        then return Nothing
+        else liftM Just $! bamAux2i nh
+
+nMismatch :: Bam1 -> Maybe Int
+nMismatch b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
+  withCAString "NM" $ \nmstr ->
+  do nm <- bamAuxGet p nmstr
+     if nm == nullPtr
+        then return Nothing
+        else liftM Just $! bamAux2i nm
+
 -- | Handle for reading SAM/BAM format alignments
 data InHandle = InHandle { inFilename :: !FilePath
                          , samfile :: !(MVar (Ptr SamFileInt))
@@ -260,5 +284,5 @@ put1 outh b = withMVar (outfile outh) $ \fsam ->
   withForeignPtr (ptrBam1 b) $ \p ->
   sbamWrite fsam p >>= handleRes
     where handleRes res | res > 0 = return ()
-                        | res <= 0 = ioError . userError $ "Error writing to BAM file " ++ show (outFilename outh)
+                        | otherwise = ioError . userError $ "Error writing to BAM file " ++ show (outFilename outh)
  

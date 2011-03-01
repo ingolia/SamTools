@@ -3,14 +3,8 @@ module Bio.SamTools.Internal
 
 import Control.Monad
 import qualified Data.ByteString.Char8 as BS
-import qualified Data.Vector as V
 import Foreign
 import Foreign.C.String
-import Foreign.ForeignPtr
-import Foreign.Marshal
-import Foreign.Marshal.Array
-import Foreign.Ptr
-import Foreign.Storable
 
 import Bio.SamTools.LowLevel
 
@@ -53,28 +47,28 @@ targetSeqList h = unsafePerformIO $ withForeignPtr (unHeader h) $ \bhdr -> do
   names <- getTargetName bhdr
   lens <- getTargetLen bhdr
   forM [0..((fromIntegral ntarg)-1)] $ \idx -> do
-    h <- peek (advancePtr names idx) >>= BS.packCString
+    n <- peek (advancePtr names idx) >>= BS.packCString
     l <- peek (advancePtr lens idx)
-    return $ HeaderSeq h (fromIntegral l)
+    return $ HeaderSeq n (fromIntegral l)
 
 -- | Returns a target sequence by ID, which is a 0-based index
 targetSeq :: Header -> Int -> HeaderSeq
 targetSeq h idx = unsafePerformIO $ withForeignPtr (unHeader h) $ \bhdr -> do
   ntarg <- liftM fromIntegral . getNTargets $ bhdr
   when (idx < 0 || idx >= ntarg) $ ioError . userError $
-    "Target id " ++ show idx ++ " out of bounds " ++ show (0, ntarg-1)
+    "Target id " ++ show idx ++ " > " ++ show (ntarg-1)
   names <- getTargetName bhdr
   lens <- getTargetLen bhdr
-  h <- peek (advancePtr names idx) >>= BS.packCString
+  n <- peek (advancePtr names idx) >>= BS.packCString
   l <- peek (advancePtr lens idx)
-  return $ HeaderSeq h (fromIntegral l)
+  return $ HeaderSeq n (fromIntegral l)
 
 -- | Returns a target sequence name by ID
 targetSeqName :: Header -> Int -> BS.ByteString
 targetSeqName h idx = unsafePerformIO $ withForeignPtr (unHeader h) $ \bhdr -> do
   ntarg <- liftM fromIntegral . getNTargets $ bhdr
   when (idx < 0 || idx >= ntarg) $ ioError . userError $
-    "Target id " ++ show idx ++ " out of bounds " ++ show (0, ntarg-1)
+    "Target id " ++ show idx ++ " > " ++ show (ntarg - 1)
   names <- getTargetName bhdr  
   peek (advancePtr names idx) >>= BS.packCString
 
@@ -82,13 +76,13 @@ targetSeqLen :: Header -> Int -> Int
 targetSeqLen h idx = unsafePerformIO $ withForeignPtr (unHeader h) $ \bhdr -> do
   ntarg <- liftM fromIntegral . getNTargets $ bhdr
   when (idx < 0 || idx >= ntarg) $ ioError . userError $
-    "Target id " ++ show idx ++ " out of bounds " ++ show (0, ntarg-1)
+    "Target id " ++ show idx ++ " > " ++ show (ntarg-1)
   lens <- getTargetLen bhdr
   liftM fromIntegral . peek $ advancePtr lens idx
 
 lookupTarget :: Header -> BS.ByteString -> Maybe Int
-lookupTarget h name = unsafePerformIO $ withForeignPtr (unHeader h) $ \bhdr ->
-  liftM handleResult . bamGetTid bhdr $ name
+lookupTarget h n = unsafePerformIO $ withForeignPtr (unHeader h) $ \bhdr ->
+  liftM handleResult . bamGetTid bhdr $ n
     where handleResult res | res < 0 = Nothing    
                            | otherwise = Just res
 

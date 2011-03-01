@@ -11,9 +11,7 @@ module Bio.SamTools.BamIndex
        where        
 
 import Control.Concurrent.MVar
-import Control.Exception
 import Control.Monad
-import Foreign.C.Types
 import Foreign.ForeignPtr
 import Foreign.Ptr
 
