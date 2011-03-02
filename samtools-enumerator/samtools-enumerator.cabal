@@ -14,3 +14,4 @@ Library
   Exposed-modules:     Bio.SamTools.Enumerator
   Build-depends:       base == 4.*, bytestring == 0.9.*, haskell98, transformers, enumerator == 0.4.*, samtools == 0.1.*
   Hs-Source-Dirs:      src
+
