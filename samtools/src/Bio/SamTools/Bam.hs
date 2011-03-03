@@ -31,6 +31,8 @@ module Bio.SamTools.Bam (
     
   , nMismatch, nHits, matchDesc                                                               
                                                                
+  , refSpLoc, refSeqLoc
+                      
   -- * Reading SAM/BAM format files
   , InHandle, inHeader
   , openTamInFile, openTamInFileWithIndex, openBamInFile
@@ -54,27 +56,33 @@ import Foreign.C.String
 
 import qualified Data.Vector as V
 
+import Bio.SeqLoc.OnSeq
+import qualified Bio.SeqLoc.SpliceLocation as SpLoc
+import Bio.SeqLoc.Strand
+
 import Bio.SamTools.Cigar
 import Bio.SamTools.Internal
 import Bio.SamTools.LowLevel
 
--- | Target sequence ID in the target set, or 'Nothing' for an
--- unmapped read
+-- | 'Just' the reference target sequence ID in the target set, or
+-- 'Nothing' for an unmapped read
 targetID :: Bam1 -> Maybe Int
 targetID b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ liftM fromTID . getTID
   where fromTID ctid | ctid < 0 = Nothing
                      | otherwise = Just $! fromIntegral ctid
 
--- | Target sequence name, or 'Nothing' for an unmapped read
+-- | 'Just' the target sequence name, or 'Nothing' for an unmapped
+-- read
 targetName :: Bam1 -> Maybe BS.ByteString
 targetName b = liftM (targetSeqName (header b)) $! targetID b
 
--- | Total length of the target sequence, or 'Nothing' for an unmapped
--- read
+-- | 'Just' the total length of the target sequence, or 'Nothing' for
+-- an unmapped read
 targetLen :: Bam1 -> Maybe Int
 targetLen b = liftM (targetSeqLen (header b)) $! targetID b
 
--- | 0-based index of the leftmost aligned position on the target sequence
+-- | 'Just' the 0-based index of the leftmost aligned position on the
+-- target sequence, or 'Nothing' for an unmapped read
 position :: Bam1 -> Maybe Int
 position b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ liftM fromPos . getPos
   where fromPos cpos | cpos < 0 = Nothing
@@ -195,6 +203,8 @@ insertSize b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ liftM fromISize . 
   where fromISize cis | cis < 1 = Nothing
                       | otherwise = Just $! fromIntegral cis
 
+-- | 'Just' the match descriptor alignment field, or 'Nothing' when it
+-- is absent
 matchDesc :: Bam1 -> Maybe BS.ByteString
 matchDesc b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
   withCAString "MD" $ \mdstr -> 
@@ -206,6 +216,8 @@ matchDesc b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
                    then return Nothing
                    else liftM Just . BS.packCString $ cstr
 
+-- | 'Just' the number of reported alignments, or 'Nothing' when this
+-- information is not present.
 nHits :: Bam1 -> Maybe Int
 nHits b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
   withCAString "NH" $ \nhstr ->
@@ -214,6 +226,8 @@ nHits b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
         then return Nothing
         else liftM Just $! bamAux2i nh
 
+-- | 'Just' the number of mismatches in the alignemnt, or 'Nothing'
+-- when this information is not present
 nMismatch :: Bam1 -> Maybe Int
 nMismatch b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
   withCAString "NM" $ \nmstr ->
@@ -221,6 +235,22 @@ nMismatch b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
      if nm == nullPtr
         then return Nothing
         else liftM Just $! bamAux2i nm
+
+-- | 'Just' the reference sequence location covered by the
+-- alignment. This includes nucleotide positions that are reported to
+-- be deleted in the read, but not skipped nucleotide position
+-- (typically intronic positions in a spliced alignment). If the
+-- reference location is unavailable, e.g. for an unmapped read or for
+-- a read with no CIGAR format alignment information, then 'Nothing'.
+refSpLoc :: Bam1 -> Maybe SpLoc.SpliceLoc
+refSpLoc b | isUnmap b = Nothing
+           | otherwise = liftM (stranded strand) $! liftM2 (cigarToSpLoc) (position b) (Just . cigars $ b)
+             where strand = if isReverse b then RevCompl else Fwd
+               
+-- | 'Just' the reference sequence location (as per 'refSpLoc') on
+-- the target reference (as per 'targetName')
+refSeqLoc :: Bam1 -> Maybe SpliceSeqLoc
+refSeqLoc b = liftM2 OnSeq (liftM SeqName $! targetName b) (refSpLoc b)
 
 -- | Handle for reading SAM/BAM format alignments
 data InHandle = InHandle { inFilename :: !FilePath

@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Main
        where 
 
@@ -11,12 +12,18 @@ import System.FilePath
 import System.IO
 import System.Process
 
+import Bio.SeqLoc.LocRepr
+
 import qualified Bio.SamTools.Bam as Bam
 import qualified Bio.SamTools.BamIndex as BamIndex
 import qualified Bio.SamTools.Cigar as Cigar
 
-actinName = "uc003sot.3"
-actinLen = 1852
+geneTargetName = "chr1"
+geneTargetBounds = (14362 - 100, 16764 + 100)
+geneRegion = BS.concat [ geneTargetName, ":"
+                          , BS.pack . show . fst $ geneTargetBounds, "-"
+                          , BS.pack . show . snd $ geneTargetBounds
+                          ]
 
 main :: IO ()
 main = getArgs >>= mainWithArgs
@@ -32,10 +39,10 @@ doSamTest bamin = do samout <- bamToSam bamin
                      samout2 <- samToBam samout >>= bamToSam
                      rawSystemP "diff" [ samout, samout2 ]
                      
-                     actinsam <- extract bamin
-                     let actinsam' = actinsam ++ "_samtools"                     
-                     rawSystemE "samtools" [ "view", bamin, "-h", "-o", actinsam', actinName ++ ":0-" ++ show (actinLen - 1) ]
-                     rawSystemP "diff" [ actinsam, actinsam' ]
+                     genesam <- extract bamin
+                     let genesam' = genesam ++ "_samtools"                     
+                     rawSystemE "samtools" [ "view", bamin, "-h", "-o", genesam', BS.unpack geneRegion ]
+                     rawSystemP "diff" [ genesam, genesam' ]
                      
                      header <- headerToIndex bamin
                      let header' = header ++ "_samtools"
@@ -69,16 +76,23 @@ headerToIndex inname = let outname = dropExtension inname ++ "-index.txt"
                              return outname
                          
 extract :: FilePath -> IO FilePath
-extract inname = let outname = dropExtension inname ++ "-actin.sam"
+extract inname = let outname = dropExtension inname ++ "-gene.sam"
+                     outname2 = dropExtension inname ++ "-gene-sploc.sam"
                  in bracket (BamIndex.open inname) (BamIndex.close) $ \idxin ->
                  let header = BamIndex.idxHeader idxin
-                     tid = fromMaybe (error $ "No sequence " ++ show actinName) $ 
-                           Bam.lookupTarget (BamIndex.idxHeader idxin) $ BS.pack actinName
-                 in bracket (Bam.openTamOutFile outname header) Bam.closeOutHandle $ \hout -> do
-                   unless (Bam.targetSeqName header tid == BS.pack actinName) $ error "Bad target name"
-                   unless (Bam.targetSeqLen header tid == actinLen) $ error "Bad target length"
-                   q <- BamIndex.query idxin tid (0, actinLen - 1)
-                   loop (BamIndex.next q) (Bam.put1 hout)
+                     tid = fromMaybe (error $ "No sequence " ++ show geneTargetName) $ 
+                           Bam.lookupTarget (BamIndex.idxHeader idxin) $ geneTargetName
+                 in bracket (Bam.openTamOutFile outname header) Bam.closeOutHandle $ \hout -> 
+                 withFile outname2 WriteMode $ \hout2 -> do
+                   unless (Bam.targetSeqName header tid == geneTargetName) $ error "Bad target name"
+                   q <- BamIndex.query idxin tid geneTargetBounds
+                   loop (BamIndex.next q) $ \b -> do
+                     Bam.put1 hout b
+                     hPutStrLn hout2 . concat $ 
+                       [ maybe "n/a" (BS.unpack . repr) . Bam.refSeqLoc $ b
+                       , "\t"
+                       , show b
+                       ]
                    return outname
 
 parseBam :: Bam.Header -> Bam.Bam1 -> IO ()

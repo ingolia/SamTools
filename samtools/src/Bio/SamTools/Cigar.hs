@@ -3,16 +3,27 @@
 module Bio.SamTools.Cigar ( CigarType(..)
                           , Cigar(..)
                           , toCigar
+                          , cigarToSpLoc
+                          , cigarToAlignment
                           )
        where 
 
 import Prelude hiding (length)
 
+import qualified Data.ByteString.Char8 as BS
+import Data.List (mapAccumL) -- hiding (length)
+import Data.Maybe
 import Foreign.C
 
 import qualified Data.Vector as V
 
 import Bio.SamTools.LowLevel
+
+import Bio.SeqLoc.LocRepr
+import qualified Bio.SeqLoc.Location as Loc
+import qualified Bio.SeqLoc.Position as Pos
+import qualified Bio.SeqLoc.SpliceLocation as SpLoc
+import Bio.SeqLoc.Strand
 
 -- | Cigar entry types
 data CigarType = Match    -- ^ Aligned nucleotide, may be a match or mismatch
@@ -37,6 +48,7 @@ cigarTypes = emptyCigarTypes V.// typeAssocs
         maxtype = maximum . map fst $ typeAssocs
         emptyCigarTypes = V.generate (maxtype + 1) (\idx -> error $ "Unknown cigar op " ++ show idx)
                         
+-- | Cigar entry including length
 data Cigar = Cigar { cigar :: !CigarType, length :: !Int } deriving (Show, Ord, Eq)
 
 toCigarType :: BamCigar -> CigarType
@@ -47,3 +59,41 @@ toCigar :: CUInt -> Cigar
 toCigar cuint = Cigar { cigar = toCigarType . cigarOp $ cuint
                       , length = fromIntegral . cigarLength $ cuint
                       }
+                
+-- | 
+cigarToSpLoc :: Int -> [Cigar] -> SpLoc.SpliceLoc
+cigarToSpLoc pos5 = fromContigs . foldr mergeAdj [] . catMaybes . snd . mapAccumL entry pos5
+  where fromContigs ctgs = fromMaybe badContigs $! SpLoc.fromContigs ctgs
+          where badContigs = error . unwords $ 
+                             [ "cigarToSpLoc: bad contigs " ]
+                             ++ map (BS.unpack . repr) ctgs
+        entry start (Cigar Match     len) = (start + len, contig start len)
+        entry start (Cigar Ins      _len) = (start,       Nothing)
+        entry start (Cigar Del       len) = (start + len, contig start len) -- INCLUDE aligned but deleted region
+        entry start (Cigar RefSkip   len) = (start + len, Nothing)
+        entry start (Cigar SoftClip _len) = (start,       Nothing)
+        entry start (Cigar HardClip _len) = (start,       Nothing)
+        entry start (Cigar Pad      _len) = (start,       Nothing)
+        contig start len = Just $! Loc.fromStartEnd (fromIntegral start) (fromIntegral $ start + len - 1)
+
+mergeAdj :: Loc.ContigLoc -> [Loc.ContigLoc] -> [Loc.ContigLoc]
+mergeAdj cprev [] = [cprev]
+mergeAdj cprev cs@(ccurr:crest) 
+  | adjacent  = Loc.fromPosLen (Loc.startPos cprev) (Loc.length cprev + Loc.length ccurr) : crest
+  | otherwise = cprev : cs
+    where adjacent = (snd . Loc.bounds $ cprev) + 1 == (fst . Loc.bounds $ ccurr)
+          
+cigarToAlignment :: Int -> [Cigar] -> [(Maybe Pos.Pos, Maybe Pos.Pos)]
+cigarToAlignment pos5 cigars = concat . snd . mapAccumL cigarStep (0, pos5) $ cigars
+  where cigarStep (read0, ref0) (Cigar Match     len) = ((read0 + len, ref0 + len)
+                                                        , zip (poses read0 len) (poses ref0 len))
+        cigarStep (read0, ref0) (Cigar Ins       len) = ((read0 + len, ref0)
+                                                        , zip (poses read0 len) (repeat Nothing))
+        cigarStep (read0, ref0) (Cigar Del       len) = ((read0, ref0 + len)
+                                                        , zip (repeat Nothing) (poses ref0 len))
+        cigarStep (read0, ref0) (Cigar RefSkip   len) = ((read0, ref0 + len), [])
+        cigarStep (read0, ref0) (Cigar SoftClip  len) = ((read0 + len, ref0)
+                                                        , zip (poses read0 len) (repeat Nothing))
+        cigarStep (read0, ref0) (Cigar HardClip _len) = ((read0, ref0), [])
+        cigarStep (read0, ref0) (Cigar Pad      _len) = ((read0, ref0), [])
+        poses start len = [ Just $! Pos.Pos (fromIntegral $ start + i) Fwd | i <- [0..(len-1)] ]
