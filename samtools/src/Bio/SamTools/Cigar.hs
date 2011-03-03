@@ -1,3 +1,5 @@
+-- | Handling of the extended CIGAR pair-wise alignment descriptors
+
 module Bio.SamTools.Cigar ( CigarType(..)
                           , Cigar(..)
                           , toCigar
@@ -12,7 +14,14 @@ import qualified Data.Vector as V
 
 import Bio.SamTools.LowLevel
 
-data CigarType = Match | Ins | Del | RefSkip | SoftClip | HardClip | Pad
+-- | Cigar entry types
+data CigarType = Match    -- ^ Aligned nucleotide, may be a match or mismatch
+               | Ins      -- ^ Insertion in read relative to reference
+               | Del      -- ^ Deletion from read relative to reference
+               | RefSkip  -- ^ Skipped reference bases, i.e., splice
+               | SoftClip -- ^ Trimmed nucleotides, still present in read
+               | HardClip -- ^ Trimmed nucleotides, removed from read
+               | Pad      -- ^ Deletion from padded reference
                deriving (Show, Ord, Eq, Enum, Bounded)
                         
 cigarTypes :: V.Vector CigarType                        
@@ -33,6 +42,7 @@ data Cigar = Cigar { cigar :: !CigarType, length :: !Int } deriving (Show, Ord, 
 toCigarType :: BamCigar -> CigarType
 toCigarType = (cigarTypes V.!) . fromIntegral . unBamCigar
 
+-- | Convert a @BAM@ binary cigar integer to a 'Cigar'
 toCigar :: CUInt -> Cigar
 toCigar cuint = Cigar { cigar = toCigarType . cigarOp $ cuint
                       , length = fromIntegral . cigarLength $ cuint

@@ -82,14 +82,14 @@ extract inname = let outname = dropExtension inname ++ "-actin.sam"
                    return outname
 
 parseBam :: Bam.Header -> Bam.Bam1 -> IO ()
-parseBam hdr b = mapM_ verify [ (Bam.queryName b, bamfields !! 0)
-                              , (Bam.targetName b, bamfields !! 2)
-                              , (BS.pack . show . succ . Bam.position $ b, bamfields !! 3)                              
-                              , (Bam.querySeq b, bamfields !! 9) 
-                              ]
+parseBam hdr b = sequence_ [ verify (Bam.queryName b)  (bamfields !! 0)
+                           , verify (Bam.targetName b) (Just $ bamfields !! 2)
+                           , verify (liftM (BS.pack . show . succ) . Bam.position $ b) (Just $ bamfields !! 3)
+                           , verify (Bam.querySeq b)   (Just $ bamfields !! 9) 
+                           ]
   where bamfields = BS.split '\t' . BS.pack . show $ b
-        verify (s1, s2) | s1 == s2 = return ()
-                        | otherwise = error $ "Mismatch: " ++ show (s1, s2)
+        verify s1 s2 | s1 == s2 = return ()
+                     | otherwise = error $ "Mismatch: " ++ show (s1, s2)
                           
 loop :: (IO (Maybe a)) -> (a -> IO ()) -> IO ()
 loop mi mo = go

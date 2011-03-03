@@ -17,11 +17,11 @@
 -- the program that produced the alignment file.
 
 module Bio.SamTools.Bam ( 
-  -- | Target sequence sets
+  -- * Target sequence sets
   HeaderSeq(..)
   , Header, nTargets, targetSeqList, targetSeq, targetSeqName, targetSeqLen, lookupTarget
   
-  -- | SAM/BAM format alignments
+  -- * SAM/BAM format alignments
   , Bam1
   , targetID, targetName, targetLen, position
   , isPaired, isProperPair, isUnmap, isMateUnmap, isReverse, isMateReverse
@@ -31,12 +31,12 @@ module Bio.SamTools.Bam (
     
   , nMismatch, nHits, matchDesc                                                               
                                                                
-  -- | Reading SAM/BAM format files
+  -- * Reading SAM/BAM format files
   , InHandle, inHeader
   , openTamInFile, openTamInFileWithIndex, openBamInFile
   , closeInHandle
   , get1
-  -- | Writing SAM/BAM format files
+  -- * Writing SAM/BAM format files
   , OutHandle, outHeader
   , openTamOutFile, openBamOutFile
   , closeOutHandle
@@ -58,21 +58,27 @@ import Bio.SamTools.Cigar
 import Bio.SamTools.Internal
 import Bio.SamTools.LowLevel
 
--- | Target sequence ID in the target set
-targetID :: Bam1 -> Int
-targetID b = unsafePerformIO $ withForeignPtr (ptrBam1 b) getTID
+-- | Target sequence ID in the target set, or 'Nothing' for an
+-- unmapped read
+targetID :: Bam1 -> Maybe Int
+targetID b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ liftM fromTID . getTID
+  where fromTID ctid | ctid < 0 = Nothing
+                     | otherwise = Just $! fromIntegral ctid
 
--- | Target sequence name
-targetName :: Bam1 -> BS.ByteString
-targetName b = targetSeqName (header b) (targetID b)
+-- | Target sequence name, or 'Nothing' for an unmapped read
+targetName :: Bam1 -> Maybe BS.ByteString
+targetName b = liftM (targetSeqName (header b)) $! targetID b
 
--- | Total length of the target sequence
-targetLen :: Bam1 -> Int
-targetLen b = targetSeqLen (header b) (targetID b)
+-- | Total length of the target sequence, or 'Nothing' for an unmapped
+-- read
+targetLen :: Bam1 -> Maybe Int
+targetLen b = liftM (targetSeqLen (header b)) $! targetID b
 
 -- | 0-based index of the leftmost aligned position on the target sequence
-position :: Bam1 -> Int
-position b = unsafePerformIO $ withForeignPtr (ptrBam1 b) getPos
+position :: Bam1 -> Maybe Int
+position b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ liftM fromPos . getPos
+  where fromPos cpos | cpos < 0 = Nothing
+                     | otherwise = Just $! fromIntegral cpos
 
 isFlagSet :: BamFlag -> Bam1 -> Bool
 isFlagSet f b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ liftM isfset . getFlag
@@ -132,41 +138,62 @@ cigars b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p -> do
 queryName :: Bam1 -> BS.ByteString
 queryName b = unsafePerformIO $ withForeignPtr (ptrBam1 b) (return . bam1QName)
 
--- | Length of the query sequence
-queryLength :: Bam1 -> Int
-queryLength b = unsafePerformIO $ withForeignPtr (ptrBam1 b) getLQSeq
+-- | 'Just' the length of the query sequence, or 'Nothing' when it is
+-- unavailable.
+queryLength :: Bam1 -> Maybe Int
+queryLength b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ liftM fromc . getLQSeq
+  where fromc clq | clq < 1 = Nothing
+                  | otherwise = Just $! fromIntegral clq
 
--- | Query sequence
-querySeq :: Bam1 -> BS.ByteString
-querySeq b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p -> do
-  l <- getLQSeq p
+-- | 'Just' the query sequence, or 'Nothing' when it is unavailable
+querySeq :: Bam1 -> Maybe BS.ByteString
+querySeq b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p -> 
   let seqarr = bam1Seq p
-  return $! BS.pack [ seqiToChar . bam1Seqi seqarr $ i | i <- [0..((fromIntegral l)-1)] ]
-
+      getQSeq l | l < 1 = return Nothing
+                | otherwise = return $! Just $! 
+                              BS.pack [ seqiToChar . bam1Seqi seqarr $ i | i <- [0..((fromIntegral l)-1)] ]
+  in getLQSeq p >>= getQSeq
+     
 seqiToChar :: CUChar -> Char
 seqiToChar = (chars V.!) . fromIntegral
   where chars = emptyChars V.// [(1, 'A'), (2, 'C'), (4, 'G'), (8, 'T'), (15, 'N')]
         emptyChars = V.generate 16 (\idx -> error $ "Unknown char " ++ show idx)
 
--- | Target ID of the mate alignment target sequence
-mateTargetID :: Bam1 -> Int
-mateTargetID b = unsafePerformIO $ withForeignPtr (ptrBam1 b) getMTID
+-- | 'Just' the target ID of the mate alignment target reference
+-- sequence, or 'Nothing' when the mate is unmapped or the read is
+-- unpaired.
+mateTargetID :: Bam1 -> Maybe Int
+mateTargetID b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ liftM fromTID . getMTID
+  where fromTID ctid | ctid < 0 = Nothing
+                     | otherwise = Just $! fromIntegral ctid
 
--- | Name of the mate alignment target sequence
-mateTargetName :: Bam1 -> BS.ByteString
-mateTargetName b = targetSeqName (header b) (mateTargetID b)
+-- | 'Just' the name of the mate alignment target reference sequence,
+-- or 'Nothing' when the mate is unmapped or the read is unpaired.
+mateTargetName :: Bam1 -> Maybe BS.ByteString
+mateTargetName b = liftM (targetSeqName (header b)) $! mateTargetID b
 
--- | Overall length of the mate alignment target sequence
-mateTargetLen :: Bam1 -> Int
-mateTargetLen b = targetSeqLen (header b) (mateTargetID b)
+-- | 'Just' the length of the mate alignment target reference
+-- sequence, or 'Nothing' when the mate is unmapped or the read is
+-- unpaired.
+mateTargetLen :: Bam1 -> Maybe Int
+mateTargetLen b = liftM (targetSeqLen (header b)) $! mateTargetID b
 
--- | 0-based coordinate of the left-most position in the mate alignment on the target
-matePosition :: Bam1 -> Int
-matePosition b = unsafePerformIO $ withForeignPtr (ptrBam1 b) getMPos
+-- | 'Just the 0-based coordinate of the left-most position in the
+-- mate alignment on the target, or 'Nothing' when the read is
+-- unpaired or the mate is unmapped.
+matePosition :: Bam1 -> Maybe Int
+matePosition b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ liftM fromPos . getMPos
+  where fromPos cpos | cpos < 0  = Nothing
+                     | otherwise = Just $! fromIntegral cpos
 
--- | Total fragment length
-insertSize :: Bam1 -> Int
-insertSize b = unsafePerformIO $ withForeignPtr (ptrBam1 b) getISize
+-- | 'Just' the total insert length, or 'Nothing' when the length is
+-- unavailable, e.g. because the read is unpaired or the mated read
+-- pair do not align in the proper relative orientation on the same
+-- strand.
+insertSize :: Bam1 -> Maybe Int
+insertSize b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ liftM fromISize . getISize
+  where fromISize cis | cis < 1 = Nothing
+                      | otherwise = Just $! fromIntegral cis
 
 matchDesc :: Bam1 -> Maybe BS.ByteString
 matchDesc b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->

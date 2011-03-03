@@ -153,11 +153,11 @@ cigarLength = {#call pure unsafe bam_cigar_length#}
 data Bam1Int
 {#pointer *bam1_t as Bam1Ptr -> Bam1Int#}
 
-getTID :: Bam1Ptr -> IO Int
-getTID = liftM fromIntegral . {#get bam1_t->core.tid#}
+getTID :: Bam1Ptr -> IO CInt
+getTID = {#get bam1_t->core.tid#}
 
-getPos :: Bam1Ptr -> IO Int
-getPos = liftM fromIntegral . {#get bam1_t->core.pos#}
+getPos :: Bam1Ptr -> IO CInt
+getPos = {#get bam1_t->core.pos#}
 
 getFlag :: Bam1Ptr -> IO BamFlag
 getFlag = liftM BamFlag . {#get bam1_t->core.flag#}
@@ -165,17 +165,17 @@ getFlag = liftM BamFlag . {#get bam1_t->core.flag#}
 getNCigar :: Bam1Ptr -> IO Int
 getNCigar = liftM fromIntegral . {#get bam1_t->core.n_cigar#}
 
-getLQSeq :: Bam1Ptr -> IO Int
-getLQSeq = liftM fromIntegral . {#get bam1_t->core.l_qseq#}
+getLQSeq :: Bam1Ptr -> IO CInt
+getLQSeq = {#get bam1_t->core.l_qseq#}
 
-getMTID :: Bam1Ptr -> IO Int
-getMTID = liftM fromIntegral . {#get bam1_t->core.mtid#}
+getMTID :: Bam1Ptr -> IO CInt
+getMTID = {#get bam1_t->core.mtid#}
 
-getMPos :: Bam1Ptr -> IO Int
-getMPos = liftM fromIntegral . {#get bam1_t->core.mpos#}
+getMPos :: Bam1Ptr -> IO CInt
+getMPos =  {#get bam1_t->core.mpos#}
 
-getISize :: Bam1Ptr -> IO Int
-getISize = liftM fromIntegral . {#get bam1_t->core.isize#}
+getISize :: Bam1Ptr -> IO CInt
+getISize = {#get bam1_t->core.isize#}
 
 {#fun pure unsafe bam1_strand_ as bam1Strand 
   {id `Bam1Ptr' } -> `Bool'#}
