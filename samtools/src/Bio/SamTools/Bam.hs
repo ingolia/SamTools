@@ -264,6 +264,8 @@ newInHandle filename fsam = do
   mv <- newMVar fsam
   addMVarFinalizer mv (finalizeSamFile mv)
   bhdr <- getSbamHeader fsam
+  when (bhdr == nullPtr) $ ioError . userError $ 
+    "Error reading header from BAM file " ++ show filename
   hdr <- newHeader bhdr
   return $ InHandle { inFilename = filename, samfile = mv, inHeader = hdr }  
 

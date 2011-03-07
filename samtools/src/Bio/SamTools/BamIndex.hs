@@ -37,6 +37,8 @@ open filename = do
     $ "Error opening index for BAM file " ++ show filename
   mv <- newMVar (f, i)
   bhdr <- bamHeaderRead f
+  when (bhdr == nullPtr) $ ioError . userError $
+    "Error reading header from BAM file " ++ show filename
   bamInitHeaderHash bhdr
   addMVarFinalizer mv (finalizeBamIndex mv)
   hdr <- liftM Header . newForeignPtr bamHeaderDestroyPtr $ bhdr
