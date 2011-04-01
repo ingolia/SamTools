@@ -1,0 +1,220 @@
+Introduction
+============
+
+The `samtools` package provides a wrapper around the C
+[samtools](http://samtools.sourceforge.net/) library. The library
+maintains data in the C native data structures but provides a more
+idiomatic Haskell interface.
+
+I begin this example by importing modules that I will use.
+
+	{-# LANGUAGE OverloadedStrings #-}
+	module Main
+	       where 
+	
+	import Control.Exception
+	import Control.Monad
+	import qualified Data.ByteString.Char8 as BS
+	import Data.Maybe
+	import System.Environment
+	import System.Exit
+	import System.FilePath
+	import System.IO
+	import System.Process
+	
+	import Bio.SeqLoc.LocRepr
+	
+	import qualified Bio.SamTools.Bam as Bam
+	import qualified Bio.SamTools.BamIndex as BamIndex
+	import qualified Bio.SamTools.Cigar as Cigar
+	
+I also provide a small function to loop over a pair of monadic
+actions. The first is an input, which returns `Maybe a`, and the
+second consumes the `a`. The input and output actions are repeated
+until the input action returns `Nothing`. This will be used to loop
+over all alignments from a file and process each with a monadic
+action.
+
+	loop :: (IO (Maybe a)) -> (a -> IO ()) -> IO ()
+	loop mi mo = go
+	  where go = mi >>= maybe (return ()) (\i -> mo i >> go)
+	
+BAM File Headers
+================
+
+The `samtools` library keeps track of target sequences in a header
+structure, and internally the target is recorded as an index into the
+header sequence list. Here I open an alignment file, which
+automatically loads the header, and write just the header data to a
+second file. This header data includes the name and length of each
+alignment target.
+
+	headerToIndex :: FilePath -> IO FilePath
+	headerToIndex inname = let outname = dropExtension inname ++ "-index.txt"
+	                       in bracket (Bam.openBamInFile inname) Bam.closeInHandle $ \hin ->
+	                       withFile outname WriteMode $ \hout -> 
+	                       let hseqs = Bam.targetSeqList $ Bam.inHeader hin
+	                       in do forM_ hseqs $ \hseq -> hPutStrLn hout . concat $ 
+	                                                    [ "@SQ\tSN:", BS.unpack . Bam.name $ hseq, "\tLN:", show . Bam.len $ hseq ]
+	                             return outname
+	                         
+
+Reading and Writing Alignments
+==============================
+
+I start with simple functions to convert between binary and text
+format files by reading the alignments using one interface and writing
+them using another. There are separate `InHandle` and `OutHandle` data
+types for reading and writing files. This example opens an `InHandle`
+with `openBamInFile` to read binary format alignments. It then opens
+an `OutHandle` with `openTamOutFile` to write text format
+alignments. The output file requires the header from the input file,
+which is extracted from the `InHandle` with `inHeader`. The `loop`
+utility above is then used to first read an alignment with `get1` and
+then write it with `put1`.
+
+	bamToSam :: FilePath -> IO FilePath
+	bamToSam inname = let outname = dropExtension inname ++ "-test.sam"
+	                  in bracket (Bam.openBamInFile inname) Bam.closeInHandle $ \hin ->
+	                  bracket (Bam.openTamOutFile outname (Bam.inHeader hin)) Bam.closeOutHandle $ \hout -> do
+	                    loop (Bam.get1 hin) (Bam.put1 hout)
+	                    return outname
+
+An analogous conversion can be performed to read text format
+alignments and write then to a binary format file.
+	    
+	samToBam :: FilePath -> IO FilePath
+	samToBam inname = let outname = dropExtension inname ++ "-test.bam"
+	                  in bracket (Bam.openTamInFile inname) Bam.closeInHandle $ \hin ->
+	                  bracket (Bam.openBamOutFile outname (Bam.inHeader hin)) Bam.closeOutHandle $ \hout -> do
+	                    loop (Bam.get1 hin) (Bam.put1 hout)
+	                    return outname
+	
+Accessing Alignment Data
+========================
+
+The `Bam` format alignment provides accessor functions for the
+alignment data. It also provides a `Show` instance that returns the
+text-format alignment data line. Here I write a function that compares
+the results of the accessor functions to the results of manually
+extracting fields from the text format data.  I test four accessors
+against the name of the query sequence, the name of the alignment
+target, the position of the alignment (which is 1-based in the text
+SAM format), and the query sequence itself.
+
+	parseBam :: Bam.Header -> Bam.Bam1 -> IO ()
+	parseBam hdr b = sequence_ [ verify (Bam.queryName b)  (bamfields !! 0)
+	                           , verify (Bam.targetName b) (Just $ bamfields !! 2)
+	                           , verify (liftM (BS.pack . show . succ) . Bam.position $ b) (Just $ bamfields !! 3)
+	                           , verify (Bam.querySeq b)   (Just $ bamfields !! 9) 
+	                           ]
+	  where bamfields = BS.split '\t' . BS.pack . show $ b
+	        verify s1 s2 | s1 == s2 = return ()
+	                     | otherwise = error $ "Mismatch: " ++ show (s1, s2)
+	                          
+
+Querying a Sorted BAM File
+==========================
+
+One great advantage of the SAM format is that alignments can be sorted
+and indexed to allow rapid random access to all alignments that lie
+within a specific region. This makes it possible to write a genome
+browser that displays alignments by retrieving just those alignments
+that overlap the genomic region on the screen, or a script that
+processes alignments mapping to a single locus, without loading all
+alignments into memory. The `BamIndex` module provides access to this
+interface.
+
+First I take an abritrary region corresponding to a gene near the
+start of the human genome annotation data file.
+
+	geneTargetName = "chr1"
+	geneTargetBounds = (14362 - 100, 16764 + 100)
+	geneRegion = BS.concat [ geneTargetName, ":"
+	                          , BS.pack . show . fst $ geneTargetBounds, "-"
+	                          , BS.pack . show . snd $ geneTargetBounds
+	                          ]	
+
+Next I extract the alignments within that region using the `BamIndex`
+interface. I look up the *id* of the named target sequence, `"chr1"`,
+in the header. I use the *id*, along with the coordinates, to `query`
+the indexed BAM file. I then use the iterator-style interface on the
+query, provided by `next`, to retrieve alignments and re-write them to
+a text-format data file as well as writing some summary information as
+text to a second file.
+
+	extract :: FilePath -> IO FilePath
+	extract inname = let outname = dropExtension inname ++ "-gene.sam"
+	                     outname2 = dropExtension inname ++ "-gene-sploc.sam"
+	                 in bracket (BamIndex.open inname) (BamIndex.close) $ \idxin ->
+	                 let header = BamIndex.idxHeader idxin
+	                     tid = fromMaybe (error $ "No sequence " ++ show geneTargetName) $ 
+	                           Bam.lookupTarget (BamIndex.idxHeader idxin) $ geneTargetName
+	                 in bracket (Bam.openTamOutFile outname header) Bam.closeOutHandle $ \hout -> 
+	                 withFile outname2 WriteMode $ \hout2 -> do
+	                   unless (Bam.targetSeqName header tid == geneTargetName) $ error "Bad target name"
+	                   q <- BamIndex.query idxin tid geneTargetBounds
+	                   loop (BamIndex.next q) $ \b -> do
+	                     Bam.put1 hout b
+	                     hPutStrLn hout2 . concat $ 
+	                       [ maybe "n/a" (BS.unpack . repr) . Bam.refSeqLoc $ b
+	                       , "\t"
+	                       , show b
+	                       ]
+	                   return outname
+	
+Putting it All Together
+=======================
+
+I start with two small utilities to run system commands with verbose
+error handling.
+
+	rawSystemE :: String -> [String] -> IO ()
+	rawSystemE prog args = rawSystem prog args >>= checkExit
+	  where checkExit ExitSuccess = return ()
+	        checkExit (ExitFailure err) = error $ show (prog : args) ++ " => " ++ show err
+	
+	rawSystem_ :: String -> [String] -> IO ()
+	rawSystem_ prog args = rawSystem prog args >>= checkExit >> return ()
+	  where checkExit ExitSuccess = return ()
+	        checkExit (ExitFailure err) = hPutStrLn stderr $ show (prog : args) ++ " => " ++ show err
+	
+	rawSystemP :: String -> [String] -> IO ()
+	rawSystemP prog args = rawSystem prog args >>= checkExit >> return ()
+	  where checkExit ExitSuccess = hPutStrLn stderr $ show (prog : args) ++ " => 0"
+	        checkExit (ExitFailure err) = hPutStrLn stderr $ show (prog : args) ++ " => " ++ show err
+	
+I use these to run the `samtools` binary and compare the results to
+the functions above, which use the `samtools` library.
+
+	doSamTest :: FilePath -> IO ()
+	doSamTest bamin = do samout <- bamToSam bamin
+	                     let samout' = samout ++ "_samtools"
+	                     rawSystemE "samtools" [ "view", bamin, "-h", "-o", samout' ]
+	                     rawSystemP "diff" [ samout, samout' ]
+	                     samout2 <- samToBam samout >>= bamToSam
+	                     rawSystemP "diff" [ samout, samout2 ]
+	                     
+	                     genesam <- extract bamin
+	                     let genesam' = genesam ++ "_samtools"                     
+	                     rawSystemE "samtools" [ "view", bamin, "-h", "-o", genesam', BS.unpack geneRegion ]
+	                     rawSystemP "diff" [ genesam, genesam' ]
+	                     
+	                     header <- headerToIndex bamin
+	                     let header' = header ++ "_samtools"
+	                     rawSystemE "samtools" [ "view", bamin, "-H", "-o", header' ]
+	                     rawSystemP "diff" [ header, header' ]
+	
+	                     bracket (Bam.openBamInFile bamin) Bam.closeInHandle $ \hin ->
+	                       Bam.get1 hin >>= maybe (return ()) (parseBam (Bam.inHeader hin))
+
+Finally, I write a `main` function that takes a single *BAM* format
+alignment, sorted and indexed, and performs the above tests.
+
+	main :: IO ()
+	main = getArgs >>= mainWithArgs
+	  where mainWithArgs [ bamin ] = doSamTest bamin
+	        mainWithArgs _ = do prog <- getProgName
+	                            error . unwords $ [ "USAGE:", prog, "<IN.BAM>" ]
+	
+	

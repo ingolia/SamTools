@@ -1,6 +1,11 @@
 Name:                samtools
 Version:             0.1
 Synopsis:            Binding to the C samtools library
+Description:         Binding to the C samtools library, which reads and
+                     writes SAM format alignments, both binary and tab-
+                     delimited text formats. It also supports rapid access
+                     to specific alignments in a sorted BAM file and access
+                     to sequences from indexed Fasta files.
 License:             MIT
 License-file:        LICENSE
 Author:              Nicholas Ingolia
@@ -8,9 +13,16 @@ Maintainer:          nick@ingolia.org
 Category:            Bio
 
 Build-type:          Simple
-Cabal-version:       >=1.2
+Cabal-version:       >=1.4
 
-Extra-source-files: cbits, include, samtools-0.1.13
+Extra-source-files: cbits/samtools.c, include/samtools.h,
+                    samtools-0.1.13/bgzf.c, samtools-0.1.13/kstring.c, samtools-0.1.13/bam_aux.c, 
+                    samtools-0.1.13/bam.c, samtools-0.1.13/bam_import.c, samtools-0.1.13/sam.c,
+                    samtools-0.1.13/bam_index.c, samtools-0.1.13/bam_pileup.c, samtools-0.1.13/bam_lpileup.c,
+                    samtools-0.1.13/bam_md.c, samtools-0.1.13/glf.c, samtools-0.1.13/razf.c,
+                    samtools-0.1.13/faidx.c, samtools-0.1.13/knetfile.c, samtools-0.1.13/bam_sort.c,
+                    samtools-0.1.13/sam_header.c, samtools-0.1.13/bam_reheader.c, samtools-0.1.13/kprobaln.c,
+                    samtools-0.1.13/bam_maqcns.c, samtools-0.1.13/errmod.c, samtools-0.1.13/kaln.c
 
 Flag Tests
   Description: Build test program
@@ -20,7 +32,7 @@ Library
   Exposed-modules:     Bio.SamTools.Bam, Bio.SamTools.Cigar,
                        Bio.SamTools.BamIndex, Bio.SamTools.FaIdx
   Other-modules:       Bio.SamTools.LowLevel, Bio.SamTools.Internal, C2HS
-  Build-depends:       base, bytestring, haskell98, vector >= 0.7, seqloc
+  Build-depends:       base >= 4.3 && < 5, bytestring, haskell98, vector >= 0.7, seqloc
   Hs-Source-Dirs:      src
   Build-tools:         c2hs
   Include-dirs:        samtools-0.1.13, include
@@ -37,9 +49,9 @@ Library
                        samtools-0.1.13/glf.h, samtools-0.1.13/khash.h,
                        samtools-0.1.13/kseq.h, samtools-0.1.13/ksort.h, samtools-0.1.13/kstring.h,
                        samtools-0.1.13/razf.h, samtools-0.1.13/sam.h, samtools-0.1.13/sam_header.h
-  CC-options:          -g -O2 -D_FILE_OFFSET_BITS=64 -D_USE_KNETFILE -Wno-unused-result
+  CC-options:          -g -D_FILE_OFFSET_BITS=64 -D_USE_KNETFILE -Wno-unused-result
   Extra-libraries:     z
-  Ghc-options:         -O2 -Wall
+  Ghc-options:         -Wall
 
 Executable samtest
   if !flag(Tests)
@@ -48,7 +60,7 @@ Executable samtest
   Other-modules:       Bio.SamTools.Bam, Bio.SamTools.Cigar,
                        Bio.SamTools.BamIndex, Bio.SamTools.FaIdx,
                        Bio.SamTools.LowLevel, Bio.SamTools.Internal, C2HS
-  Build-depends:       base, bytestring, haskell98, vector >= 0.7, seqloc, process, filepath
+  Build-depends:       base >= 4.3 && < 5, bytestring, haskell98, vector >= 0.7, seqloc, process, filepath
   Hs-Source-Dirs:      src, test
   Build-tools:         c2hs
   Include-dirs:        samtools-0.1.13, include
@@ -65,6 +77,6 @@ Executable samtest
                        samtools-0.1.13/glf.h, samtools-0.1.13/khash.h,
                        samtools-0.1.13/kseq.h, samtools-0.1.13/ksort.h, samtools-0.1.13/kstring.h,
                        samtools-0.1.13/razf.h, samtools-0.1.13/sam.h, samtools-0.1.13/sam_header.h
-  CC-options:          -g -O2 -D_FILE_OFFSET_BITS=64 -D_USE_KNETFILE -Wno-unused-result
+  CC-options:          -g -D_FILE_OFFSET_BITS=64 -D_USE_KNETFILE -Wno-unused-result
   Extra-libraries:     z
-  Ghc-options:         -prof -auto-all -fhpc -O2 -Wall
+  Ghc-options:         -Wall

@@ -12,7 +12,7 @@ import Bio.SamTools.LowLevel
 data HeaderSeq = HeaderSeq { -- | Target sequence name 
                              name :: !BS.ByteString
                              -- | Target sequence lengh
-                           , len :: !Int 
+                           , len :: !Int64
                            } deriving (Eq, Show, Ord)
 
 -- | Target sequences from a SAM alignment set
@@ -72,7 +72,7 @@ targetSeqName h idx = unsafePerformIO $ withForeignPtr (unHeader h) $ \bhdr -> d
   names <- getTargetName bhdr  
   peek (advancePtr names idx) >>= BS.packCString
 
-targetSeqLen :: Header -> Int -> Int
+targetSeqLen :: Header -> Int -> Int64
 targetSeqLen h idx = unsafePerformIO $ withForeignPtr (unHeader h) $ \bhdr -> do
   ntarg <- liftM fromIntegral . getNTargets $ bhdr
   when (idx < 0 || idx >= ntarg) $ ioError . userError $
@@ -84,29 +84,7 @@ lookupTarget :: Header -> BS.ByteString -> Maybe Int
 lookupTarget h n = unsafePerformIO $ withForeignPtr (unHeader h) $ \bhdr ->
   liftM handleResult . bamGetTid bhdr $ n
     where handleResult res | res < 0 = Nothing    
-                           | otherwise = Just res
-
--- withHeader :: Header -> (BamHeaderPtr -> IO a) -> IO a
--- withHeader (Header hdr) m = bracket bamHeaderInit bamHeaderDestroy $ \bhdr -> 
---   withMany BS.useAsCString (V.toList . V.map name $ hdr) $ \namelist ->
---   withArray namelist $ \names ->
---   withArray (V.toList . V.map (fromIntegral . len) $ hdr) $ \lens -> 
---   bracket_ (setNTargets bhdr . fromIntegral . V.length $ hdr) (setNTargets bhdr 0) $ 
---   bracket_ (setTargetName bhdr names) (setTargetName bhdr nullPtr) $
---   bracket_ (setTargetLen bhdr lens) (setTargetLen bhdr nullPtr) $
---   m bhdr
-
--- -- | Internal utility to copy and convert a raw 'BamHeaderInt' to a 'Header'
--- convertHeader :: BamHeaderPtr -> IO Header
--- convertHeader bhdr = do
---   ntarg <- getNTargets bhdr
---   names <- getTargetName bhdr
---   lens <- getTargetLen bhdr
---   hseqs <- forM [0..((fromIntegral ntarg)-1)] $ \idx -> do
---     h <- peek (advancePtr names idx) >>= BS.packCString
---     l <- peek (advancePtr lens idx)
---     return $ HeaderSeq h (fromIntegral l)
---   return . Header $! V.fromList hseqs
+                           | otherwise = Just $! fromIntegral res
 
 -- | SAM/BAM format alignment
 data Bam1 = Bam1 { ptrBam1 :: !(ForeignPtr Bam1Int)

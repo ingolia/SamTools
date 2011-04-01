@@ -37,16 +37,19 @@ module Bio.SamTools.Bam (
   , InHandle, inHeader
   , openTamInFile, openTamInFileWithIndex, openBamInFile
   , closeInHandle
+  , withTamInFile, withTamInFileWithIndex, withBamInFile
   , get1
   -- * Writing SAM/BAM format files
   , OutHandle, outHeader
   , openTamOutFile, openBamOutFile
   , closeOutHandle
+  , withTamOutFile, withBamOutFile
   , put1
   )
        where
 
 import Control.Concurrent.MVar
+import Control.Exception
 import Control.Monad
 import Data.Bits
 import qualified Data.ByteString.Char8 as BS
@@ -78,12 +81,12 @@ targetName b = liftM (targetSeqName (header b)) $! targetID b
 
 -- | 'Just' the total length of the target sequence, or 'Nothing' for
 -- an unmapped read
-targetLen :: Bam1 -> Maybe Int
+targetLen :: Bam1 -> Maybe Int64
 targetLen b = liftM (targetSeqLen (header b)) $! targetID b
 
 -- | 'Just' the 0-based index of the leftmost aligned position on the
 -- target sequence, or 'Nothing' for an unmapped read
-position :: Bam1 -> Maybe Int
+position :: Bam1 -> Maybe Int64
 position b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ liftM fromPos . getPos
   where fromPos cpos | cpos < 0 = Nothing
                      | otherwise = Just $! fromIntegral cpos
@@ -148,7 +151,7 @@ queryName b = unsafePerformIO $ withForeignPtr (ptrBam1 b) (return . bam1QName)
 
 -- | 'Just' the length of the query sequence, or 'Nothing' when it is
 -- unavailable.
-queryLength :: Bam1 -> Maybe Int
+queryLength :: Bam1 -> Maybe Int64
 queryLength b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ liftM fromc . getLQSeq
   where fromc clq | clq < 1 = Nothing
                   | otherwise = Just $! fromIntegral clq
@@ -183,13 +186,13 @@ mateTargetName b = liftM (targetSeqName (header b)) $! mateTargetID b
 -- | 'Just' the length of the mate alignment target reference
 -- sequence, or 'Nothing' when the mate is unmapped or the read is
 -- unpaired.
-mateTargetLen :: Bam1 -> Maybe Int
+mateTargetLen :: Bam1 -> Maybe Int64
 mateTargetLen b = liftM (targetSeqLen (header b)) $! mateTargetID b
 
 -- | 'Just the 0-based coordinate of the left-most position in the
 -- mate alignment on the target, or 'Nothing' when the read is
 -- unpaired or the mate is unmapped.
-matePosition :: Bam1 -> Maybe Int
+matePosition :: Bam1 -> Maybe Int64
 matePosition b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ liftM fromPos . getMPos
   where fromPos cpos | cpos < 0  = Nothing
                      | otherwise = Just $! fromIntegral cpos
@@ -198,7 +201,7 @@ matePosition b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ liftM fromPos . 
 -- unavailable, e.g. because the read is unpaired or the mated read
 -- pair do not align in the proper relative orientation on the same
 -- strand.
-insertSize :: Bam1 -> Maybe Int
+insertSize :: Bam1 -> Maybe Int64
 insertSize b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ liftM fromISize . getISize
   where fromISize cis | cis < 1 = Nothing
                       | otherwise = Just $! fromIntegral cis
@@ -224,7 +227,7 @@ nHits b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
   do nh <- bamAuxGet p nhstr
      if nh == nullPtr
         then return Nothing
-        else liftM Just $! bamAux2i nh
+        else liftM Just $! liftM fromIntegral $! bamAux2i nh
 
 -- | 'Just' the number of mismatches in the alignemnt, or 'Nothing'
 -- when this information is not present
@@ -234,7 +237,7 @@ nMismatch b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
   do nm <- bamAuxGet p nmstr
      if nm == nullPtr
         then return Nothing
-        else liftM Just $! bamAux2i nm
+        else liftM Just $! liftM fromIntegral $! bamAux2i nm
 
 -- | 'Just' the reference sequence location covered by the
 -- alignment. This includes nucleotide positions that are reported to
@@ -295,6 +298,20 @@ finalizeSamFile mv = modifyMVar mv $ \fsam -> do
 closeInHandle :: InHandle -> IO ()
 closeInHandle = finalizeSamFile . samfile
 
+-- | Run an IO action using a handle to a TAM format file that will be
+-- opened (see 'openTamInFile') and closed for the action.
+withTamInFile :: FilePath -> (InHandle -> IO a) -> IO a
+withTamInFile filename = bracket (openTamInFile filename) closeInHandle
+
+-- | As 'withTamInFile' with a separate target sequence index set (see
+-- 'openTamInFileWithIndex')
+withTamInFileWithIndex :: FilePath -> FilePath -> (InHandle -> IO a) -> IO a
+withTamInFileWithIndex filename indexname = bracket (openTamInFileWithIndex filename indexname) closeInHandle
+
+-- | As 'withTamInFile' for BAM (binary) format files
+withBamInFile :: FilePath -> (InHandle -> IO a) -> IO a
+withBamInFile filename = bracket (openBamInFile filename) closeInHandle
+
 -- | Reads one alignment from an input handle, or returns @Nothing@ for end-of-file
 get1 :: InHandle -> IO (Maybe Bam1)
 get1 inh = withMVar (samfile inh) $ \fsam -> do
@@ -333,6 +350,12 @@ openBamOutFile = newOutHandle "wb"
 -- | Close an alignment output handle
 closeOutHandle :: OutHandle -> IO ()
 closeOutHandle = finalizeSamFile . outfile
+
+withTamOutFile :: FilePath -> Header -> (OutHandle -> IO a) -> IO a
+withTamOutFile filename hdr = bracket (openTamOutFile filename hdr) closeOutHandle
+
+withBamOutFile :: FilePath -> Header -> (OutHandle -> IO a) -> IO a
+withBamOutFile filename hdr = bracket (openBamOutFile filename hdr) closeOutHandle
 
 -- | Writes one alignment to an input handle.
 -- 

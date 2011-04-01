@@ -220,7 +220,7 @@ getISize = {#get bam1_t->core.isize#}
 
 {#fun unsafe bam_get_tid as bamGetTid
   { id `BamHeaderPtr'
-  , useAsCString* `BS.ByteString'} -> `Int'#}
+  , useAsCString* `BS.ByteString'} -> `CInt' id#}
 
 -- Low-level BAM I/O
 {#fun unsafe bam_header_init as bamHeaderInit
@@ -257,7 +257,7 @@ foreign import ccall unsafe "bam.h &bam_header_destroy" bamHeaderDestroyPtr :: F
   { id `Ptr CUChar' } -> `CString' id#}
 
 {#fun unsafe bam_aux2i as bamAux2i
-  { id `Ptr CUChar' } -> `Int'#}
+  { id `Ptr CUChar' } -> `CInt' id#}
 
 {#fun unsafe bam_init1_ as bamInit1
   { } -> `Bam1Ptr' id#}
@@ -291,14 +291,14 @@ foreign import ccall "wrapper"
 
 {#fun bam_fetch as bamFetch
   { id `BamFilePtr', id `BamIndexPtr'
-  , `Int', `Int', `Int'
-  , id `Ptr ()', id `BamFetchFPtr' } -> `Int'#}
+  ,id `CInt',id `CInt',id `CInt'
+  , id `Ptr ()', id `BamFetchFPtr' } -> `CInt' id#}
 
 data BamIterInt
 {#pointer bam_iter_t as BamIterPtr -> BamIterInt#}
 
 {#fun unsafe bam_iter_query as bamIterQuery
-  {id `BamIndexPtr', `Int', `Int', `Int'} -> `BamIterPtr' id#}
+  {id `BamIndexPtr', id `CInt', id `CInt', id `CInt'} -> `BamIterPtr' id#}
 
 {#fun unsafe bam_iter_read as bamIterRead
   {id `BamFilePtr', id `BamIterPtr', id `Bam1Ptr'} -> `CInt' id#}
@@ -343,7 +343,7 @@ data FaIdxInt
 
 {#fun unsafe faidx_fetch_seq as faiFetchSeq
  {id `FaIdxPtr'
- ,id `CString' , `Int', `Int'
+ ,id `CString' , id `CInt', id `CInt'
  , id `Ptr CInt' } -> `CString' id#}
 
 -- Helpers

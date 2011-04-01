@@ -4,14 +4,16 @@
 module Bio.SamTools.BamIndex
        ( 
          IdxHandle, idxFilename, idxHeader
-       , open, close
+       , open, close, withIndex
        , Query, qyHandle
        , query, next
        )          
        where        
 
 import Control.Concurrent.MVar
+import Control.Exception
 import Control.Monad
+import Data.Int (Int64)
 import Foreign.ForeignPtr
 import Foreign.Ptr
 
@@ -60,9 +62,12 @@ data Query = Query { qyHandle :: !IdxHandle
                    , iter :: !(MVar (Ptr BamIterInt))
                    }
               
-query :: IdxHandle -> Int -> (Int, Int) -> IO Query
+withIndex :: FilePath -> (IdxHandle -> IO a) -> IO a
+withIndex filename = bracket (open filename) close
+             
+query :: IdxHandle -> Int -> (Int64, Int64) -> IO Query
 query inh tid (start, end) = withMVar (bamindex inh) $ \(_f, idx) -> do
-  it <- bamIterQuery idx tid start end
+  it <- bamIterQuery idx (fromIntegral tid) (fromIntegral start) (fromIntegral end)
   when (it == nullPtr) $ ioError . userError
     $ "Error starting BAM query: " ++ show (idxFilename inh, (tid, (start, end)))
   mv <- newMVar it

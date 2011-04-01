@@ -11,6 +11,7 @@ module Bio.SamTools.Cigar ( CigarType(..)
 import Prelude hiding (length)
 
 import qualified Data.ByteString.Char8 as BS
+import Data.Int (Int64)
 import Data.List (mapAccumL) -- hiding (length)
 import Data.Maybe
 import Foreign.C
@@ -49,7 +50,7 @@ cigarTypes = emptyCigarTypes V.// typeAssocs
         emptyCigarTypes = V.generate (maxtype + 1) (\idx -> error $ "Unknown cigar op " ++ show idx)
                         
 -- | Cigar entry including length
-data Cigar = Cigar { cigar :: !CigarType, length :: !Int } deriving (Show, Ord, Eq)
+data Cigar = Cigar { cigar :: !CigarType, length :: !Int64 } deriving (Show, Ord, Eq)
 
 toCigarType :: BamCigar -> CigarType
 toCigarType = (cigarTypes V.!) . fromIntegral . unBamCigar
@@ -61,7 +62,7 @@ toCigar cuint = Cigar { cigar = toCigarType . cigarOp $ cuint
                       }
                 
 -- | 
-cigarToSpLoc :: Int -> [Cigar] -> SpLoc.SpliceLoc
+cigarToSpLoc :: Int64 -> [Cigar] -> SpLoc.SpliceLoc
 cigarToSpLoc pos5 = fromContigs . foldr mergeAdj [] . catMaybes . snd . mapAccumL entry pos5
   where fromContigs ctgs = fromMaybe badContigs $! SpLoc.fromContigs ctgs
           where badContigs = error . unwords $ 
@@ -83,7 +84,7 @@ mergeAdj cprev cs@(ccurr:crest)
   | otherwise = cprev : cs
     where adjacent = (snd . Loc.bounds $ cprev) + 1 == (fst . Loc.bounds $ ccurr)
           
-cigarToAlignment :: Int -> [Cigar] -> [(Maybe Pos.Pos, Maybe Pos.Pos)]
+cigarToAlignment :: Int64 -> [Cigar] -> [(Maybe Pos.Pos, Maybe Pos.Pos)]
 cigarToAlignment pos5 cigars = concat . snd . mapAccumL cigarStep (0, pos5) $ cigars
   where cigarStep (read0, ref0) (Cigar Match     len) = ((read0 + len, ref0 + len)
                                                         , zip (poses read0 len) (poses ref0 len))
