@@ -6,12 +6,10 @@ module Bio.SamTools.Iteratee
        )      
 where
   
-import Control.Exception (bracket, bracket_, finally)  
-import Control.Monad
+import Control.Exception
 import Control.Monad.IO.Class
 import qualified Data.ByteString.Char8 as BS
-import Data.List
-import Data.Maybe
+import Data.Int (Int64)
 
 import qualified Bio.SamTools.Bam as Bam
 import qualified Bio.SamTools.BamIndex as BamIndex
@@ -46,12 +44,12 @@ enumQuery q i0 = step i0
                   where onCont k Nothing = step . k $ Iter.Chunk [b]
                         onCont k e       = return $ Iter.icont k e
 
-enumIndexRegion :: BamIndex.IdxHandle -> Int -> (Int, Int) -> Iter.Enumerator [Bam.Bam1] IO a
+enumIndexRegion :: BamIndex.IdxHandle -> Int -> (Int64, Int64) -> Iter.Enumerator [Bam.Bam1] IO a
 enumIndexRegion h tid bnds i0 = do
   q <- liftIO $ BamIndex.query h tid bnds
   enumQuery q i0
   
-enumBamRegion :: FilePath -> BS.ByteString -> (Int, Int) -> Iter.Enumerator [Bam.Bam1] IO a
+enumBamRegion :: FilePath -> BS.ByteString -> (Int64, Int64) -> Iter.Enumerator [Bam.Bam1] IO a
 enumBamRegion inname seqname bnds i0 = bracket (BamIndex.open inname) BamIndex.close $ \h -> do
   tid <- lookupTid . BamIndex.idxHeader $ h
   enumIndexRegion h tid bnds i0
