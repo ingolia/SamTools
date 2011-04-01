@@ -14,6 +14,7 @@ import Control.Exception (bracket, bracket_, finally)
 import Control.Monad
 import Control.Monad.IO.Class
 import qualified Data.ByteString.Char8 as BS
+import Data.Int (Int64)
 import Data.List
 import Data.Maybe
 
@@ -54,13 +55,13 @@ enumQuery q = loop
         loop step = E.returnI step
         
 -- | Enumerate over the reads in a region from an indexed BAM file input handle
-enumIndexRegion :: BamIndex.IdxHandle -> Int -> (Int, Int) -> E.Enumerator Bam.Bam1 IO a
+enumIndexRegion :: BamIndex.IdxHandle -> Int -> (Int64, Int64) -> E.Enumerator Bam.Bam1 IO a
 enumIndexRegion h tid bnds step = E.Iteratee $ do 
   q <- liftIO $ BamIndex.query h tid bnds 
   E.runIteratee $ enumQuery q step
 
 -- | Enumerate over the reads in a region from a sorted, indexed BAM file
-enumBamRegion :: FilePath -> BS.ByteString -> (Int, Int) -> E.Enumerator Bam.Bam1 IO a
+enumBamRegion :: FilePath -> BS.ByteString -> (Int64, Int64) -> E.Enumerator Bam.Bam1 IO a
 enumBamRegion inname seqname bnds step = E.Iteratee $ liftIO $ bracket (BamIndex.open inname) (BamIndex.close) $ \h -> do
   tid <- lookupTid $ BamIndex.idxHeader h
   E.runIteratee $ enumIndexRegion h tid bnds step

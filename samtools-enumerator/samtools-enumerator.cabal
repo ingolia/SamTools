@@ -1,6 +1,7 @@
 Name:                samtools-enumerator
 Version:             0.1
 Synopsis:            Enumerator interface to SamTools library
+Description:         Enumerator interface to SamTools library
 License:             MIT
 License-file:        LICENSE
 Author:              Nicholas Ingolia
@@ -8,10 +9,10 @@ Maintainer:          nick@ingolia.org
 Category:            Bio
 
 Build-type:          Simple
-Cabal-version:       >=1.2
+Cabal-version:       >=1.4
 
 Library
   Exposed-modules:     Bio.SamTools.Enumerator
-  Build-depends:       base == 4.*, bytestring == 0.9.*, haskell98, transformers, enumerator == 0.4.*, samtools == 0.1.*
+  Build-depends:       base >= 4.3 && < 5, bytestring, haskell98, transformers, enumerator >= 0.4.7 && < 0.5, samtools >= 0.1.1 && < 0.2
   Hs-Source-Dirs:      src
 
