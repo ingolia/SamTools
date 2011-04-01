@@ -1,5 +1,5 @@
 Name:                samtools
-Version:             0.1
+Version:             0.1.1
 Synopsis:            Binding to the C samtools library
 Description:         Binding to the C samtools library, which reads and
                      writes SAM format alignments, both binary and tab-
@@ -11,6 +11,7 @@ License-file:        LICENSE
 Author:              Nicholas Ingolia
 Maintainer:          nick@ingolia.org
 Category:            Bio
+Homepage:            http://www.ingolia-lab.org/software/samtools/
 
 Build-type:          Simple
 Cabal-version:       >=1.4
@@ -48,8 +49,10 @@ Library
                        samtools-0.1.13/bam.h, samtools-0.1.13/bam_endian.h, samtools-0.1.13/faidx.h, 
                        samtools-0.1.13/glf.h, samtools-0.1.13/khash.h,
                        samtools-0.1.13/kseq.h, samtools-0.1.13/ksort.h, samtools-0.1.13/kstring.h,
-                       samtools-0.1.13/razf.h, samtools-0.1.13/sam.h, samtools-0.1.13/sam_header.h
-  CC-options:          -g -D_FILE_OFFSET_BITS=64 -D_USE_KNETFILE -Wno-unused-result
+                       samtools-0.1.13/razf.h, samtools-0.1.13/sam.h, samtools-0.1.13/sam_header.h,
+                       samtools-0.1.13/bgzf.h, samtools-0.1.13/knetfile.h, samtools-0.1.13/kaln.h,
+                       samtools-0.1.13/kprobaln.h, samtools-0.1.13/bam_maqcns.h, samtools-0.1.13/errmod.h
+  CC-options:          -g -D_FILE_OFFSET_BITS=64 -D_USE_KNETFILE
   Extra-libraries:     z
   Ghc-options:         -Wall
 
@@ -76,7 +79,9 @@ Executable samtest
                        samtools-0.1.13/bam.h, samtools-0.1.13/bam_endian.h, samtools-0.1.13/faidx.h, 
                        samtools-0.1.13/glf.h, samtools-0.1.13/khash.h,
                        samtools-0.1.13/kseq.h, samtools-0.1.13/ksort.h, samtools-0.1.13/kstring.h,
-                       samtools-0.1.13/razf.h, samtools-0.1.13/sam.h, samtools-0.1.13/sam_header.h
-  CC-options:          -g -D_FILE_OFFSET_BITS=64 -D_USE_KNETFILE -Wno-unused-result
+                       samtools-0.1.13/razf.h, samtools-0.1.13/sam.h, samtools-0.1.13/sam_header.h,
+                       samtools-0.1.13/bgzf.h, samtools-0.1.13/knetfile.h, samtools-0.1.13/kaln.h,
+                       samtools-0.1.13/kprobaln.h, samtools-0.1.13/bam_maqcns.h, samtools-0.1.13/errmod.h
+  CC-options:          -g -D_FILE_OFFSET_BITS=64 -D_USE_KNETFILE
   Extra-libraries:     z
   Ghc-options:         -Wall

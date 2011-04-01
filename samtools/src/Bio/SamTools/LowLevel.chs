@@ -46,6 +46,8 @@ import C2HS
 import Control.Monad
 import qualified Data.ByteString.Char8 as BS
 
+#undef __BLOCKS__
+
 #include "faidx.h"
 #include "sam.h"
 #include "samtools.h"
