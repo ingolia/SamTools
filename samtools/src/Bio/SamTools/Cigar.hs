@@ -75,7 +75,7 @@ cigarToSpLoc pos5 = fromContigs . foldr mergeAdj [] . catMaybes . snd . mapAccum
         entry start (Cigar SoftClip _len) = (start,       Nothing)
         entry start (Cigar HardClip _len) = (start,       Nothing)
         entry start (Cigar Pad      _len) = (start,       Nothing)
-        contig start len = Just $! Loc.fromStartEnd (fromIntegral start) (fromIntegral $ start + len - 1)
+        contig start len = Just $! Loc.fromBoundsStrand (fromIntegral start) (fromIntegral $ start + len - 1) Fwd
 
 mergeAdj :: Loc.ContigLoc -> [Loc.ContigLoc] -> [Loc.ContigLoc]
 mergeAdj cprev [] = [cprev]
