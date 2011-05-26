@@ -6,7 +6,7 @@ License:             MIT
 License-file:        LICENSE
 Author:              Nicholas Ingolia
 Maintainer:          nick@ingolia.org
-Category:            Bio
+Category:            Bioinformatics
 
 Build-type:          Simple
 Cabal-version:       >=1.4
