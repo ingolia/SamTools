@@ -26,7 +26,7 @@ module Bio.SamTools.Bam (
   , targetID, targetName, targetLen, position
   , isPaired, isProperPair, isUnmap, isMateUnmap, isReverse, isMateReverse
   , isRead1, isRead2, isSecondary, isQCFail, isDup
-  , cigars, queryName, queryLength, querySeq
+  , cigars, queryName, queryLength, querySeq, queryQual
   , mateTargetID, mateTargetName, mateTargetLen, matePosition, insertSize
     
   , nMismatch, nHits, matchDesc                                                               
@@ -52,6 +52,7 @@ import Control.Concurrent.MVar
 import Control.Exception
 import Control.Monad
 import Data.Bits
+import qualified Data.ByteString as BSW
 import qualified Data.ByteString.Char8 as BS
 import Foreign hiding (new)
 import Foreign.C.Types
@@ -164,6 +165,18 @@ querySeq b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
                 | otherwise = return $! Just $! 
                               BS.pack [ seqiToChar . bam1Seqi seqarr $ i | i <- [0..((fromIntegral l)-1)] ]
   in getLQSeq p >>= getQSeq
+     
+-- | 'Just' the query qualities, or 'Nothing' when it is
+-- unavailable. These are returned in ASCII format, i.e., /q/ + 33.
+queryQual :: Bam1 -> Maybe BS.ByteString
+queryQual b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
+  let getQQual l | l < 1 = return Nothing
+                 | otherwise = do q0 <- peek $! bam1Qual p
+                                  if q0 == 0xff
+                                     then return Nothing
+                                     else liftM (Just . BSW.map (+ 33)) $!
+                                            BS.packCStringLen (castPtr $! bam1Qual p, fromIntegral l)
+  in getLQSeq p >>= getQQual
      
 seqiToChar :: CUChar -> Char
 seqiToChar = (chars V.!) . fromIntegral

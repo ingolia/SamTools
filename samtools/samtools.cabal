@@ -33,7 +33,7 @@ Library
   Exposed-modules:     Bio.SamTools.Bam, Bio.SamTools.Cigar,
                        Bio.SamTools.BamIndex, Bio.SamTools.FaIdx
   Other-modules:       Bio.SamTools.LowLevel, Bio.SamTools.Internal, C2HS
-  Build-depends:       base >= 4.3 && < 5, bytestring, haskell98, vector >= 0.7, seqloc
+  Build-depends:       base >= 4.2 && < 5, bytestring, haskell98, vector >= 0.7, seqloc
   Hs-Source-Dirs:      src
   Build-tools:         c2hs
   Include-dirs:        samtools-0.1.13, include
@@ -63,7 +63,7 @@ Executable samtest
   Other-modules:       Bio.SamTools.Bam, Bio.SamTools.Cigar,
                        Bio.SamTools.BamIndex, Bio.SamTools.FaIdx,
                        Bio.SamTools.LowLevel, Bio.SamTools.Internal, C2HS
-  Build-depends:       base >= 4.3 && < 5, bytestring, haskell98, vector >= 0.7, seqloc, process, filepath
+  Build-depends:       base >= 4.2 && < 5, bytestring, haskell98, vector >= 0.7, seqloc, process, filepath
   Hs-Source-Dirs:      src, test
   Build-tools:         c2hs
   Include-dirs:        samtools-0.1.13, include
