@@ -30,13 +30,3 @@ Executable bam-filter
                        transformers, iteratee >= 0.8 && < 0.9, monads-tf
   Hs-Source-Dirs:      src
   Ghc-options:         -Wall
-
-Executable bam-count
-  if !flag(Utilities)
-    Buildable: False
-  Main-Is:             BamCount.hs
-  Other-Modules:       Bio.SamTools.Iteratee
-  Build-depends:       base >= 4.3 && < 5, bytestring >= 0.9 && < 0.10, haskell98, samtools >= 0.1.1, 
-                       transformers, iteratee >= 0.8 && < 0.9, monads-tf, vector
-  Hs-Source-Dirs:      src
-  Ghc-options:         -Wall
