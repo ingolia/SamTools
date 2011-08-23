@@ -163,7 +163,7 @@ querySeq b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
   let seqarr = bam1Seq p
       getQSeq l | l < 1 = return Nothing
                 | otherwise = return $! Just $! 
-                              BS.pack [ seqiToChar . bam1Seqi seqarr $ i | i <- [0..((fromIntegral l)-1)] ]
+	          fst (BS.unfoldrN (fromIntegral l) (\i -> if i==l then Nothing else Just (seqiToChar $ bam1Seqi seqarr $ i,i+1)) 0)
   in getLQSeq p >>= getQSeq
      
 -- | 'Just' the query qualities, or 'Nothing' when it is
