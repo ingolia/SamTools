@@ -1,5 +1,5 @@
 Name:                samtools
-Version:             0.1.2
+Version:             0.1.3
 Synopsis:            Binding to the C samtools library
 Description:         Binding to the C samtools library, which reads and
                      writes SAM format alignments, both binary and tab-
