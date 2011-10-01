@@ -1,5 +1,5 @@
 Name:                samtools-enumerator
-Version:             0.1.1
+Version:             0.1.2
 Synopsis:            Enumerator interface to SamTools library
 Description:         Enumerator interface to SamTools library
 License:             MIT
@@ -13,6 +13,6 @@ Cabal-version:       >=1.4
 
 Library
   Exposed-modules:     Bio.SamTools.Enumerator
-  Build-depends:       base >= 4.2 && < 5, bytestring, haskell98, transformers, enumerator >= 0.4.7 && < 0.5, samtools >= 0.1.1 && < 0.2
+  Build-depends:       base >= 4.2 && < 5, bytestring, transformers, enumerator >= 0.4.7 && < 0.5, samtools >= 0.1.1 && < 0.2
   Hs-Source-Dirs:      src
 
