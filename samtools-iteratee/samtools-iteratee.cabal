@@ -1,5 +1,5 @@
 Name:                samtools-iteratee
-Version:             0.2.1
+Version:             0.2.2
 Synopsis:            Iteratee interface to SamTools library
 Description:         Iteratee interface to SamTools library
 License:             MIT
@@ -17,7 +17,7 @@ Flag Utilities
 
 Library
   Exposed-modules:     Bio.SamTools.Iteratee
-  Build-depends:       base >= 4.2 && < 5, bytestring >= 0.9 && < 0.10, haskell98, samtools >= 0.1.1, 
+  Build-depends:       base >= 4.2 && < 5, bytestring >= 0.9 && < 0.10, samtools >= 0.1.1, 
                        transformers, iteratee >= 0.8 && < 0.9
   Hs-Source-Dirs:      src
 
@@ -26,7 +26,7 @@ Executable bam-filter
     Buildable: False
   Main-Is:             BamFilter.hs
   Other-Modules:       Bio.SamTools.Iteratee
-  Build-depends:       base >= 4.2 && < 5, bytestring >= 0.9 && < 0.10, haskell98, samtools >= 0.1.1, 
+  Build-depends:       base >= 4.2 && < 5, bytestring >= 0.9 && < 0.10, samtools >= 0.1.1, 
                        transformers, iteratee >= 0.8 && < 0.9, monads-tf
   Hs-Source-Dirs:      src
   Ghc-options:         -Wall
