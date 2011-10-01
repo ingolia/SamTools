@@ -261,12 +261,12 @@ nMismatch b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
 refSpLoc :: Bam1 -> Maybe SpLoc.SpliceLoc
 refSpLoc b | isUnmap b = Nothing
            | otherwise = liftM (stranded strand) $! liftM2 (cigarToSpLoc) (position b) (Just . cigars $ b)
-             where strand = if isReverse b then RevCompl else Fwd
+             where strand = if isReverse b then Minus else Plus
                
 -- | 'Just' the reference sequence location (as per 'refSpLoc') on
 -- the target reference (as per 'targetName')
 refSeqLoc :: Bam1 -> Maybe SpliceSeqLoc
-refSeqLoc b = liftM2 OnSeq (liftM SeqName $! targetName b) (refSpLoc b)
+refSeqLoc b = liftM2 OnSeq (liftM toSeqLabel $! targetName b) (refSpLoc b)
 
 -- | Handle for reading SAM/BAM format alignments
 data InHandle = InHandle { inFilename :: !FilePath

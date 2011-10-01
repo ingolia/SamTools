@@ -75,7 +75,7 @@ cigarToSpLoc pos5 = fromContigs . foldr mergeAdj [] . catMaybes . snd . mapAccum
         entry start (Cigar SoftClip _len) = (start,       Nothing)
         entry start (Cigar HardClip _len) = (start,       Nothing)
         entry start (Cigar Pad      _len) = (start,       Nothing)
-        contig start len = Just $! Loc.fromBoundsStrand (fromIntegral start) (fromIntegral $ start + len - 1) Fwd
+        contig start len = Just $! Loc.fromBoundsStrand (fromIntegral start) (fromIntegral $ start + len - 1) Plus
 
 mergeAdj :: Loc.ContigLoc -> [Loc.ContigLoc] -> [Loc.ContigLoc]
 mergeAdj cprev [] = [cprev]
@@ -97,4 +97,4 @@ cigarToAlignment pos5 cigars = concat . snd . mapAccumL cigarStep (0, pos5) $ ci
                                                         , zip (poses read0 len) (repeat Nothing))
         cigarStep (read0, ref0) (Cigar HardClip _len) = ((read0, ref0), [])
         cigarStep (read0, ref0) (Cigar Pad      _len) = ((read0, ref0), [])
-        poses start len = [ Just $! Pos.Pos (fromIntegral $ start + i) Fwd | i <- [0..(len-1)] ]
+        poses start len = [ Just $! Pos.Pos (fromIntegral $ start + i) Plus | i <- [0..(len-1)] ]

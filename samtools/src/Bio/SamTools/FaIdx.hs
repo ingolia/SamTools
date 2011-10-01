@@ -65,8 +65,8 @@ fetch inh name (start, end) = withMVar (faidx inh) $ \fai ->
           return sout
 
 fetchContig :: InHandle -> OnSeq Loc.ContigLoc -> IO (Maybe BS.ByteString)
-fetchContig inh (OnSeq (SeqName name) cl) 
-  = liftM result $ fetch inh name intbounds
+fetchContig inh (OnSeq name cl) 
+  = liftM result $ fetch inh (unSeqLabel name) intbounds
   where intbounds = (fromIntegral *** fromIntegral) $ Loc.bounds cl
         result sequ | BS.null sequ = Nothing
                     | otherwise = return $! stranded (Loc.strand cl) sequ
