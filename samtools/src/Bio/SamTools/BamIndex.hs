@@ -7,6 +7,7 @@ module Bio.SamTools.BamIndex
        , open, close, withIndex
        , Query, qyHandle
        , query, next
+       , readBamRegion
        )          
        where        
 
@@ -20,7 +21,8 @@ import Foreign.Ptr
 import Bio.SamTools.Bam
 import Bio.SamTools.Internal
 import Bio.SamTools.LowLevel       
-       
+import System.IO.Unsafe (unsafeInterleaveIO)       
+
 -- | Handle for fetching alignments by region from a sorted, indexed
 -- BAM file.
 data IdxHandle = IdxHandle { idxFilename :: !FilePath -- ^ Filename of sorted, indexed BAM file
@@ -92,3 +94,17 @@ next rgn = withMVar (bamindex . qyHandle $ rgn) $ \(f, _idx) ->
                   then ioError . userError $
                        "Error reading BAM query from " ++ show (idxFilename . qyHandle $ rgn)
                   else return Nothing
+
+-- | Use a BAM index file to extract 'Bam1' records aligned to a 
+-- specific target sequence (chromosome) number and region.
+readBamRegion :: IdxHandle -> Int -> (Int64,Int64) -> IO [Bam1]
+readBamRegion h chr reg  = do
+  q <- query h chr reg
+  go q
+  where go x = do
+          mb1 <- next x
+          case mb1 of Nothing -> return []
+                      Just b1 -> do
+                        bs <- unsafeInterleaveIO (go x)
+                        return (b1:bs)
+                       

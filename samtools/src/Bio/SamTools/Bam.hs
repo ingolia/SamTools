@@ -39,6 +39,7 @@ module Bio.SamTools.Bam (
   , closeInHandle
   , withTamInFile, withTamInFileWithIndex, withBamInFile
   , get1
+  , readBams
   -- * Writing SAM/BAM format files
   , OutHandle, outHeader
   , openTamOutFile, openBamOutFile
@@ -57,7 +58,7 @@ import qualified Data.ByteString.Char8 as BS
 import Foreign hiding (new)
 import Foreign.C.Types
 import Foreign.C.String
-
+import System.IO.Unsafe (unsafeInterleaveIO)
 import qualified Data.Vector as V
 
 import Bio.SeqLoc.OnSeq
@@ -337,6 +338,17 @@ get1 inh = withMVar (samfile inh) $ \fsam -> do
                 else return Nothing
     else do bptr <- newForeignPtr bamDestroy1Ptr b
             return . Just $ Bam1 { ptrBam1 = bptr, header = inHeader inh }
+
+-- | Read a BAM file as a lazy strem of 'Bam1' records.
+readBams :: FilePath -> IO [Bam1]
+readBams = openBamInFile >=> getBams 
+  where
+    getBams h = do
+      b <- get1 h
+      case b of Nothing -> closeInHandle h >> return []
+                Just b1 -> do
+                  bs <- unsafeInterleaveIO (getBams h)
+                  return (b1:bs)
 
 -- | Handle for writing SAM/BAM format alignments
 data OutHandle = OutHandle { outFilename :: !FilePath
