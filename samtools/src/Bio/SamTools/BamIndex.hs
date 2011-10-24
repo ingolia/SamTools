@@ -21,7 +21,6 @@ import Foreign.Ptr
 import Bio.SamTools.Bam
 import Bio.SamTools.Internal
 import Bio.SamTools.LowLevel       
-import System.IO.Unsafe (unsafeInterleaveIO)       
 
 -- | Handle for fetching alignments by region from a sorted, indexed
 -- BAM file.
@@ -105,6 +104,6 @@ readBamRegion h chr reg  = do
           mb1 <- next x
           case mb1 of Nothing -> return []
                       Just b1 -> do
-                        bs <- unsafeInterleaveIO (go x)
+                        bs <- go x
                         return (b1:bs)
                        
