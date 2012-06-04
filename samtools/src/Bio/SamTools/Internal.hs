@@ -5,6 +5,7 @@ import Control.Monad
 import qualified Data.ByteString.Char8 as BS
 import Foreign
 import Foreign.C.String
+import qualified System.IO.Unsafe as Unsafe
 
 import Bio.SamTools.LowLevel
 
@@ -38,11 +39,11 @@ newHeader bhp0 = do
   
 -- | Number of target sequences
 nTargets :: Header -> Int
-nTargets h = fromIntegral . unsafePerformIO $ withForeignPtr (unHeader h) getNTargets
+nTargets h = fromIntegral . Unsafe.unsafePerformIO $ withForeignPtr (unHeader h) getNTargets
 
 -- | Returns the list of target sequences
 targetSeqList :: Header -> [HeaderSeq]
-targetSeqList h = unsafePerformIO $ withForeignPtr (unHeader h) $ \bhdr -> do
+targetSeqList h = Unsafe.unsafePerformIO $ withForeignPtr (unHeader h) $ \bhdr -> do
   ntarg <- getNTargets bhdr
   names <- getTargetName bhdr
   lens <- getTargetLen bhdr
@@ -53,7 +54,7 @@ targetSeqList h = unsafePerformIO $ withForeignPtr (unHeader h) $ \bhdr -> do
 
 -- | Returns a target sequence by ID, which is a 0-based index
 targetSeq :: Header -> Int -> HeaderSeq
-targetSeq h idx = unsafePerformIO $ withForeignPtr (unHeader h) $ \bhdr -> do
+targetSeq h idx = Unsafe.unsafePerformIO $ withForeignPtr (unHeader h) $ \bhdr -> do
   ntarg <- liftM fromIntegral . getNTargets $ bhdr
   when (idx < 0 || idx >= ntarg) $ ioError . userError $
     "Target id " ++ show idx ++ " > " ++ show (ntarg-1)
@@ -65,7 +66,7 @@ targetSeq h idx = unsafePerformIO $ withForeignPtr (unHeader h) $ \bhdr -> do
 
 -- | Returns a target sequence name by ID
 targetSeqName :: Header -> Int -> BS.ByteString
-targetSeqName h idx = unsafePerformIO $ withForeignPtr (unHeader h) $ \bhdr -> do
+targetSeqName h idx = Unsafe.unsafePerformIO $ withForeignPtr (unHeader h) $ \bhdr -> do
   ntarg <- liftM fromIntegral . getNTargets $ bhdr
   when (idx < 0 || idx >= ntarg) $ ioError . userError $
     "Target id " ++ show idx ++ " > " ++ show (ntarg - 1)
@@ -73,7 +74,7 @@ targetSeqName h idx = unsafePerformIO $ withForeignPtr (unHeader h) $ \bhdr -> d
   peek (advancePtr names idx) >>= BS.packCString
 
 targetSeqLen :: Header -> Int -> Int64
-targetSeqLen h idx = unsafePerformIO $ withForeignPtr (unHeader h) $ \bhdr -> do
+targetSeqLen h idx = Unsafe.unsafePerformIO $ withForeignPtr (unHeader h) $ \bhdr -> do
   ntarg <- liftM fromIntegral . getNTargets $ bhdr
   when (idx < 0 || idx >= ntarg) $ ioError . userError $
     "Target id " ++ show idx ++ " > " ++ show (ntarg-1)
@@ -81,7 +82,7 @@ targetSeqLen h idx = unsafePerformIO $ withForeignPtr (unHeader h) $ \bhdr -> do
   liftM fromIntegral . peek $ advancePtr lens idx
 
 lookupTarget :: Header -> BS.ByteString -> Maybe Int
-lookupTarget h n = unsafePerformIO $ withForeignPtr (unHeader h) $ \bhdr ->
+lookupTarget h n = Unsafe.unsafePerformIO $ withForeignPtr (unHeader h) $ \bhdr ->
   liftM handleResult . bamGetTid bhdr $ n
     where handleResult res | res < 0 = Nothing    
                            | otherwise = Just $! fromIntegral res
@@ -92,7 +93,7 @@ data Bam1 = Bam1 { ptrBam1 :: !(ForeignPtr Bam1Int)
                  }
 
 instance Show Bam1 where
-  show b = unsafePerformIO $ 
+  show b = Unsafe.unsafePerformIO $ 
            withForeignPtr (ptrBam1 b) $ \bp ->
            withForeignPtr (unHeader . header $ b) $ \hp -> do
              n <- bamFormat1 hp bp

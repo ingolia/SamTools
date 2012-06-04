@@ -58,7 +58,7 @@ import qualified Data.ByteString.Char8 as BS
 import Foreign hiding (new)
 import Foreign.C.Types
 import Foreign.C.String
-import System.IO.Unsafe (unsafeInterleaveIO)
+import qualified System.IO.Unsafe as Unsafe
 import qualified Data.Vector as V
 
 import Bio.SeqLoc.OnSeq
@@ -72,7 +72,7 @@ import Bio.SamTools.LowLevel
 -- | 'Just' the reference target sequence ID in the target set, or
 -- 'Nothing' for an unmapped read
 targetID :: Bam1 -> Maybe Int
-targetID b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ liftM fromTID . getTID
+targetID b = Unsafe.unsafePerformIO $ withForeignPtr (ptrBam1 b) $ liftM fromTID . getTID
   where fromTID ctid | ctid < 0 = Nothing
                      | otherwise = Just $! fromIntegral ctid
 
@@ -89,12 +89,12 @@ targetLen b = liftM (targetSeqLen (header b)) $! targetID b
 -- | 'Just' the 0-based index of the leftmost aligned position on the
 -- target sequence, or 'Nothing' for an unmapped read
 position :: Bam1 -> Maybe Int64
-position b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ liftM fromPos . getPos
+position b = Unsafe.unsafePerformIO $ withForeignPtr (ptrBam1 b) $ liftM fromPos . getPos
   where fromPos cpos | cpos < 0 = Nothing
                      | otherwise = Just $! fromIntegral cpos
 
 isFlagSet :: BamFlag -> Bam1 -> Bool
-isFlagSet f b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ liftM isfset . getFlag
+isFlagSet f b = Unsafe.unsafePerformIO $ withForeignPtr (ptrBam1 b) $ liftM isfset . getFlag
   where isfset = (== f) . (.&. f)
 
 -- | Is the read paired
@@ -143,24 +143,24 @@ isDup = isFlagSet flagDup
 
 -- | CIGAR description of the alignment
 cigars :: Bam1 -> [Cigar]
-cigars b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p -> do
+cigars b = Unsafe.unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p -> do
   nc <- getNCigar p
   liftM (map toCigar) $! peekArray nc . bam1Cigar $ p
 
 -- | Name of the query sequence
 queryName :: Bam1 -> BS.ByteString
-queryName b = unsafePerformIO $ withForeignPtr (ptrBam1 b) (return . bam1QName)
+queryName b = Unsafe.unsafePerformIO $ withForeignPtr (ptrBam1 b) (return . bam1QName)
 
 -- | 'Just' the length of the query sequence, or 'Nothing' when it is
 -- unavailable.
 queryLength :: Bam1 -> Maybe Int64
-queryLength b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ liftM fromc . getLQSeq
+queryLength b = Unsafe.unsafePerformIO $ withForeignPtr (ptrBam1 b) $ liftM fromc . getLQSeq
   where fromc clq | clq < 1 = Nothing
                   | otherwise = Just $! fromIntegral clq
 
 -- | 'Just' the query sequence, or 'Nothing' when it is unavailable
 querySeq :: Bam1 -> Maybe BS.ByteString
-querySeq b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p -> 
+querySeq b = Unsafe.unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p -> 
   let seqarr = bam1Seq p
       getQSeq l | l < 1 = return Nothing
                 | otherwise = return $! Just $! 
@@ -170,7 +170,7 @@ querySeq b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
 -- | 'Just' the query qualities, or 'Nothing' when it is
 -- unavailable. These are returned in ASCII format, i.e., /q/ + 33.
 queryQual :: Bam1 -> Maybe BS.ByteString
-queryQual b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
+queryQual b = Unsafe.unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
   let getQQual l | l < 1 = return Nothing
                  | otherwise = do q0 <- peek $! bam1Qual p
                                   if q0 == 0xff
@@ -188,7 +188,7 @@ seqiToChar = (chars V.!) . fromIntegral
 -- sequence, or 'Nothing' when the mate is unmapped or the read is
 -- unpaired.
 mateTargetID :: Bam1 -> Maybe Int
-mateTargetID b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ liftM fromTID . getMTID
+mateTargetID b = Unsafe.unsafePerformIO $ withForeignPtr (ptrBam1 b) $ liftM fromTID . getMTID
   where fromTID ctid | ctid < 0 = Nothing
                      | otherwise = Just $! fromIntegral ctid
 
@@ -207,7 +207,7 @@ mateTargetLen b = liftM (targetSeqLen (header b)) $! mateTargetID b
 -- mate alignment on the target, or 'Nothing' when the read is
 -- unpaired or the mate is unmapped.
 matePosition :: Bam1 -> Maybe Int64
-matePosition b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ liftM fromPos . getMPos
+matePosition b = Unsafe.unsafePerformIO $ withForeignPtr (ptrBam1 b) $ liftM fromPos . getMPos
   where fromPos cpos | cpos < 0  = Nothing
                      | otherwise = Just $! fromIntegral cpos
 
@@ -216,14 +216,14 @@ matePosition b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ liftM fromPos . 
 -- pair do not align in the proper relative orientation on the same
 -- strand.
 insertSize :: Bam1 -> Maybe Int64
-insertSize b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ liftM fromISize . getISize
+insertSize b = Unsafe.unsafePerformIO $ withForeignPtr (ptrBam1 b) $ liftM fromISize . getISize
   where fromISize cis | cis < 1 = Nothing
                       | otherwise = Just $! fromIntegral cis
 
 -- | 'Just' the match descriptor alignment field, or 'Nothing' when it
 -- is absent
 matchDesc :: Bam1 -> Maybe BS.ByteString
-matchDesc b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
+matchDesc b = Unsafe.unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
   withCAString "MD" $ \mdstr -> 
   do md <- bamAuxGet p mdstr
      if md == nullPtr
@@ -236,7 +236,7 @@ matchDesc b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
 -- | 'Just' the number of reported alignments, or 'Nothing' when this
 -- information is not present.
 nHits :: Bam1 -> Maybe Int
-nHits b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
+nHits b = Unsafe.unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
   withCAString "NH" $ \nhstr ->
   do nh <- bamAuxGet p nhstr
      if nh == nullPtr
@@ -246,7 +246,7 @@ nHits b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
 -- | 'Just' the number of mismatches in the alignemnt, or 'Nothing'
 -- when this information is not present
 nMismatch :: Bam1 -> Maybe Int
-nMismatch b = unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
+nMismatch b = Unsafe.unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
   withCAString "NM" $ \nmstr ->
   do nm <- bamAuxGet p nmstr
      if nm == nullPtr
@@ -347,7 +347,7 @@ readBams = openBamInFile >=> getBams
       b <- get1 h
       case b of Nothing -> closeInHandle h >> return []
                 Just b1 -> do
-                  bs <- unsafeInterleaveIO (getBams h)
+                  bs <- Unsafe.unsafeInterleaveIO (getBams h)
                   return (b1:bs)
 
 -- | Handle for writing SAM/BAM format alignments

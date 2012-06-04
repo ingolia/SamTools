@@ -42,7 +42,9 @@ module Bio.SamTools.LowLevel ( TamFilePtr
                              )
 where
 
-import C2HS
+import Foreign hiding (Word)
+import Foreign.C
+
 import Control.Monad
 import qualified Data.ByteString.Char8 as BS
 
