@@ -1,5 +1,5 @@
 Name:                samtools
-Version:             0.2.1.1
+Version:             0.2.1.2
 Synopsis:            Binding to the C samtools library
 Description:         Binding to the C samtools library, which reads and
                      writes SAM format alignments, both binary and tab-
@@ -11,10 +11,10 @@ License-file:        LICENSE
 Author:              Nicholas Ingolia
 Maintainer:          nick@ingolia.org
 Category:            Bioinformatics
-Homepage:            http://www.ingolia-lab.org/software/samtools/
+Homepage:            http://www.ingolia-lab.org/samtools-tutorial.html
 
 Build-type:          Simple
-Cabal-version:       >=1.4
+Cabal-version:       >=1.6
 
 Extra-source-files: cbits/samtools.c, include/samtools.h,
                     samtools-0.1.18/bgzf.c, samtools-0.1.18/kstring.c, samtools-0.1.18/bam_aux.c, 
@@ -24,6 +24,11 @@ Extra-source-files: cbits/samtools.c, include/samtools.h,
                     samtools-0.1.18/faidx.c, samtools-0.1.18/knetfile.c, samtools-0.1.18/bam_sort.c,
                     samtools-0.1.18/sam_header.c, samtools-0.1.18/bam_reheader.c, samtools-0.1.18/kprobaln.c,
                     samtools-0.1.18/errmod.c, samtools-0.1.18/kaln.c
+
+Source-repository head
+  type: git
+  location: http://github.com/ingolia/samtools
+  subdir: samtools
 
 Flag Tests
   Description: Build test program
