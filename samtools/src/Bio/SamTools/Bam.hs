@@ -29,7 +29,7 @@ module Bio.SamTools.Bam (
   , cigars, queryName, queryLength, querySeq, queryQual
   , mateTargetID, mateTargetName, mateTargetLen, matePosition, insertSize
     
-  , nMismatch, nHits, matchDesc                                                               
+  , nMismatch, nHits, matchDesc, auxGet
                                                                
   , refSpLoc, refSeqLoc
                       
@@ -219,6 +219,19 @@ insertSize :: Bam1 -> Maybe Int64
 insertSize b = Unsafe.unsafePerformIO $ withForeignPtr (ptrBam1 b) $ liftM fromISize . getISize
   where fromISize cis | cis < 1 = Nothing
                       | otherwise = Just $! fromIntegral cis
+
+-- | 'Just' the requested auxiliary field, or 'Nothing' when it
+-- is absent
+auxGet :: Bam1 -> String -> Maybe BS.ByteString
+auxGet b str = Unsafe.unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
+  withCAString str $ \mdstr -> 
+  do md <- bamAuxGet p mdstr
+     if md == nullPtr
+        then return Nothing
+        else do cstr <- bamAux2Z md
+                if cstr == nullPtr
+                   then return Nothing
+                   else liftM Just . BS.packCString $ cstr
 
 -- | 'Just' the match descriptor alignment field, or 'Nothing' when it
 -- is absent
