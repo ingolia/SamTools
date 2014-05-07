@@ -1,5 +1,5 @@
 Name:                samtools-iteratee
-Version:             0.2.2
+Version:             0.2.2.1
 Synopsis:            Iteratee interface to SamTools library
 Description:         Iteratee interface to SamTools library
 License:             MIT

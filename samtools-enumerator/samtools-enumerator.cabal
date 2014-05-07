@@ -1,5 +1,5 @@
 Name:                samtools-enumerator
-Version:             0.1.2.1
+Version:             0.1.2.2
 Synopsis:            Enumerator interface to SamTools library
 Description:         Enumerator interface to SamTools library
 License:             MIT
