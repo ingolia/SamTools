@@ -29,7 +29,7 @@ module Bio.SamTools.Bam (
   , cigars, queryName, queryLength, querySeq, queryQual
   , mateTargetID, mateTargetName, mateTargetLen, matePosition, insertSize
     
-  , nMismatch, nHits, matchDesc                                                               
+  , nMismatch, nHits, matchDesc, auxGeti, auxGetf, auxGetd, auxGetA, auxGetZ, auxGet
                                                                
   , refSpLoc, refSeqLoc
                       
@@ -220,38 +220,93 @@ insertSize b = Unsafe.unsafePerformIO $ withForeignPtr (ptrBam1 b) $ liftM fromI
   where fromISize cis | cis < 1 = Nothing
                       | otherwise = Just $! fromIntegral cis
 
--- | 'Just' the match descriptor alignment field, or 'Nothing' when it
+-- | 'Just' the requested integer auxiliary field, or 'Nothing' when it
 -- is absent
-matchDesc :: Bam1 -> Maybe BS.ByteString
-matchDesc b = Unsafe.unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
-  withCAString "MD" $ \mdstr -> 
-  do md <- bamAuxGet p mdstr
-     if md == nullPtr
+auxGeti :: Bam1 -> String -> Maybe Int
+auxGeti b str = Unsafe.unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
+  withCAString str $ \valstr ->
+  do val <- bamAuxGet p valstr
+     if val == nullPtr
         then return Nothing
-        else do cstr <- bamAux2Z md
+        else liftM Just $! liftM fromIntegral $! bamAux2i val
+
+-- | 'Just' the requested single-precision float auxiliary field, or 'Nothing' when it
+-- is absent
+auxGetf :: Bam1 -> String -> Maybe Float
+auxGetf b str = Unsafe.unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
+  withCAString str $ \valstr ->
+  do val <- bamAuxGet p valstr
+     if val == nullPtr
+        then return Nothing
+        else liftM Just $! liftM realToFrac $! bamAux2f val
+
+-- | 'Just' the requested double-precision float auxiliary field, or 'Nothing' when it
+-- is absent
+auxGetd :: Bam1 -> String -> Maybe Double
+auxGetd b str = Unsafe.unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
+  withCAString str $ \valstr ->
+  do val <- bamAuxGet p valstr
+     if val == nullPtr
+        then return Nothing
+        else liftM Just $! liftM realToFrac $! bamAux2d val
+
+-- | 'Just' the requested character auxiliary field, or 'Nothing' when it
+-- is absent
+auxGetA :: Bam1 -> String -> Maybe Char
+auxGetA b str = Unsafe.unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
+  withCAString str $ \valstr ->
+  do val <- bamAuxGet p valstr
+     if val == nullPtr
+        then return Nothing
+        else liftM Just $! liftM castCCharToChar $! bamAux2A val
+
+-- | 'Just' the requested string auxiliary field, or 'Nothing' when it
+-- is absent
+auxGetZ :: Bam1 -> String -> Maybe BS.ByteString
+auxGetZ b str = Unsafe.unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
+  withCAString str $ \valstr -> 
+  do val <- bamAuxGet p valstr
+     if val == nullPtr
+        then return Nothing
+        else do cstr <- bamAux2Z val
                 if cstr == nullPtr
                    then return Nothing
                    else liftM Just . BS.packCString $ cstr
 
+-- | 'Just' the requested auxiliary field, or 'Nothing' when it
+-- is absent
+class AuxGet a where
+  auxGet :: Bam1 -> String -> Maybe a
+ 
+instance AuxGet Int where
+  auxGet b str = auxGeti b str
+
+instance AuxGet Float where
+  auxGet b str = auxGetf b str
+ 
+instance AuxGet Double where
+  auxGet b str = auxGetd b str
+
+instance AuxGet Char where
+  auxGet b str = auxGetA b str
+
+instance AuxGet BS.ByteString where
+  auxGet b str = auxGetZ b str
+
+-- | 'Just' the match descriptor alignment field, or 'Nothing' when it
+-- is absent
+matchDesc :: Bam1 -> Maybe BS.ByteString
+matchDesc b = auxGetZ b "MD"
+
 -- | 'Just' the number of reported alignments, or 'Nothing' when this
 -- information is not present.
 nHits :: Bam1 -> Maybe Int
-nHits b = Unsafe.unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
-  withCAString "NH" $ \nhstr ->
-  do nh <- bamAuxGet p nhstr
-     if nh == nullPtr
-        then return Nothing
-        else liftM Just $! liftM fromIntegral $! bamAux2i nh
+nHits b = auxGeti b "NH"
 
 -- | 'Just' the number of mismatches in the alignemnt, or 'Nothing'
 -- when this information is not present
 nMismatch :: Bam1 -> Maybe Int
-nMismatch b = Unsafe.unsafePerformIO $ withForeignPtr (ptrBam1 b) $ \p ->
-  withCAString "NM" $ \nmstr ->
-  do nm <- bamAuxGet p nmstr
-     if nm == nullPtr
-        then return Nothing
-        else liftM Just $! liftM fromIntegral $! bamAux2i nm
+nMismatch b = auxGeti b "NM"
 
 -- | 'Just' the reference sequence location covered by the
 -- alignment. This includes nucleotide positions that are reported to

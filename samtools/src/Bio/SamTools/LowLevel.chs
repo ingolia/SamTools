@@ -26,7 +26,7 @@ module Bio.SamTools.LowLevel ( TamFilePtr
                              , getTID, getPos, getFlag, getNCigar, getLQSeq, getMTID, getMPos, getISize
                              , bam1Strand, bam1MStrand, bam1Cigar, bam1QName, bam1Seq, bam1Qual, bam1Seqi
                                                                                                                              
-                             , bamAuxGet, bamAux2Z, bamAux2i --, bamAux2f, bamAux2d, bamAux2A
+                             , bamAuxGet, bamAux2Z, bamAux2i, bamAux2f, bamAux2d, bamAux2A
                                                                                                  
                              , bamInit1, bamDestroy1, bamDestroy1Ptr, bamDup1, bamFormat1
                              
@@ -49,6 +49,13 @@ import Control.Monad
 import qualified Data.ByteString.Char8 as BS
 
 #undef __BLOCKS__
+
+#ifdef __APPLE__ 
+#define _ANSI_SOURCE
+#define __AVAILABILITY__
+#define __OSX_AVAILABLE_STARTING(_mac, _iphone)
+#define __OSX_AVAILABLE_BUT_DEPRECATED(_macIntro, _macDep, _iphoneIntro, _iphoneDep) 
+#endif
 
 #include "faidx.h"
 #include "sam.h"
@@ -262,6 +269,15 @@ foreign import ccall unsafe "bam.h &bam_header_destroy" bamHeaderDestroyPtr :: F
 
 {#fun unsafe bam_aux2i as bamAux2i
   { id `Ptr CUChar' } -> `CInt' id#}
+
+{#fun unsafe bam_aux2f as bamAux2f
+  { id `Ptr CUChar' } -> `CFloat' id#}
+
+{#fun unsafe bam_aux2d as bamAux2d
+  { id `Ptr CUChar' } -> `CDouble' id#}
+
+{#fun unsafe bam_aux2A as bamAux2A
+  { id `Ptr CUChar' } -> `CChar' id#}
 
 {#fun unsafe bam_init1_ as bamInit1
   { } -> `Bam1Ptr' id#}
