@@ -17,11 +17,12 @@ import qualified Data.Iteratee as Iter
   
 enumInHandle :: Bam.InHandle -> Iter.Enumerator [Bam.Bam1] IO a
 enumInHandle inh i0 = step i0
-  where step iter = Bam.get1 inh >>= maybe eof next
-          where eof = return iter
-                next b = Iter.runIter iter Iter.idoneM onCont
-                  where onCont k Nothing = step . k $ Iter.Chunk [b]
-                        onCont k e = return $ Iter.icont k e
+  where step iter = do mbam <- Bam.get1 inh
+                       case mbam of
+                         Nothing -> return iter -- eof
+                         Just b -> Iter.runIter iter Iter.idoneM onCont -- next
+                           where onCont k Nothing = step . k $ Iter.Chunk [b]
+                                 onCont k e = return $ Iter.icont k e
                         
 enumTam :: FilePath -> Iter.Enumerator [Bam.Bam1] IO a
 enumTam inname i0 = bracket (Bam.openTamInFile inname) Bam.closeInHandle $ \h ->
@@ -38,11 +39,12 @@ enumBam inname i0 = bracket (Bam.openBamInFile inname) Bam.closeInHandle $ \h ->
   
 enumQuery :: BamIndex.Query -> Iter.Enumerator [Bam.Bam1] IO a
 enumQuery q i0 = step i0
-  where step iter = BamIndex.next q >>= maybe eof next
-          where eof = return iter
-                next b = Iter.runIter iter Iter.idoneM onCont
-                  where onCont k Nothing = step . k $ Iter.Chunk [b]
-                        onCont k e       = return $ Iter.icont k e
+  where step iter = do mbam <- BamIndex.next q
+                       case mbam of
+                         Nothing -> return iter -- eof
+                         Just b -> Iter.runIter iter Iter.idoneM onCont -- next
+                           where onCont k Nothing = step . k $ Iter.Chunk [b]
+                                 onCont k e       = return $ Iter.icont k e
 
 enumIndexRegion :: BamIndex.IdxHandle -> Int -> (Int64, Int64) -> Iter.Enumerator [Bam.Bam1] IO a
 enumIndexRegion h tid bnds i0 = do
