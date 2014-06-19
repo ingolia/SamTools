@@ -42,7 +42,8 @@ module Bio.SamTools.LowLevel ( TamFilePtr
                              )
 where
 
-import Foreign hiding (Word)
+import System.IO.Unsafe (unsafePerformIO)
+import Foreign hiding (Word, unsafePerformIO)
 import Foreign.C
 
 import Control.Monad

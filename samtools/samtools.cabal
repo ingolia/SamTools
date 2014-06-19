@@ -1,5 +1,5 @@
 Name:                samtools
-Version:             0.2.2
+Version:             0.2.3
 Synopsis:            Binding to the C samtools library
 Description:         Binding to the C samtools library, which reads and
                      writes SAM format alignments, both binary and tab-
@@ -38,7 +38,7 @@ Library
   Exposed-modules:     Bio.SamTools.Bam, Bio.SamTools.Cigar,
                        Bio.SamTools.BamIndex, Bio.SamTools.FaIdx
   Other-modules:       Bio.SamTools.LowLevel, Bio.SamTools.Internal
-  Build-depends:       base >= 4.2 && < 5, bytestring, vector >= 0.7, seqloc >= 0.3.1
+  Build-depends:       base >= 4.5 && < 5, bytestring, vector >= 0.7, seqloc >= 0.3.1
   Hs-Source-Dirs:      src
   Build-tools:         c2hs
   Include-dirs:        samtools-0.1.18, include
@@ -68,7 +68,7 @@ Executable samtest
   Other-modules:       Bio.SamTools.Bam, Bio.SamTools.Cigar,
                        Bio.SamTools.BamIndex, Bio.SamTools.FaIdx,
                        Bio.SamTools.LowLevel, Bio.SamTools.Internal
-  Build-depends:       base >= 4.2 && < 5, bytestring, vector >= 0.7, seqloc >= 0.3.1, process, filepath
+  Build-depends:       base >= 4.5 && < 5, bytestring, vector >= 0.7, seqloc >= 0.3.1, process, filepath
   Hs-Source-Dirs:      src, test
   Build-tools:         c2hs
   Include-dirs:        samtools-0.1.18, include
