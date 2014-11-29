@@ -29,6 +29,8 @@ module Bio.SamTools.LowLevel ( TamFilePtr
                              , bamAuxGet, bamAux2Z, bamAux2i, bamAux2f, bamAux2d, bamAux2A
                                                                                                  
                              , bamInit1, bamDestroy1, bamDestroy1Ptr, bamDup1, bamFormat1
+
+                             , bamAuxAppend
                              
                              , BamIndexInt, BamIndexPtr
                              , bamIndexLoad, bamIndexDestroy
@@ -293,6 +295,14 @@ foreign import ccall unsafe "samtools.h &bam_destroy1_" bamDestroy1Ptr :: FunPtr
 
 {#fun unsafe bam_format1 as bamFormat1
  { id `BamHeaderPtr', id `Bam1Ptr' } -> `CString' id#}
+
+{#fun unsafe bam_aux_append as bamAuxAppend
+ { id `Bam1Ptr'
+ , id `Ptr CChar'
+ , id `CChar'
+ , id `CInt'
+ , id `Ptr CUChar' }
+ -> `()'#}
 
 -- BAM indexing
 

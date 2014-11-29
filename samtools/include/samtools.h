@@ -44,4 +44,7 @@ bam1_t *bam_dup1_(const bam1_t *b);
 
 void bam_init_header_hash(bam_header_t *header);
 
+/* Prototype for bam_aux.c function */
+void bam_aux_append(bam1_t *b, const char tag[2], char type, int len, uint8_t *data);
+
 #endif /* _samtools_h */

@@ -52,6 +52,16 @@ doSamTest bamin = do samout <- bamToSam bamin
                      bracket (Bam.openBamInFile bamin) Bam.closeInHandle $ \hin ->
                        Bam.get1 hin >>= maybe (return ()) (parseBam (Bam.inHeader hin))
 
+                     addAnAuxA bamin >>= hPutStrLn stderr
+
+addAnAuxA :: FilePath -> IO FilePath
+addAnAuxA inname = let outname = dropExtension inname ++ "-auxa.bam"
+                   in bracket (Bam.openBamInFile inname) Bam.closeInHandle $ \hin ->
+                   bracket (Bam.openBamOutFile outname (Bam.inHeader hin)) Bam.closeOutHandle $ \hout -> do
+                     loop (Bam.get1 hin) (addOne hout)
+                     return outname
+  where addOne hout b = Bam.addAuxA b "XX" 'n' >>= Bam.put1 hout
+
 bamToSam :: FilePath -> IO FilePath
 bamToSam inname = let outname = dropExtension inname ++ "-test.sam"
                   in bracket (Bam.openBamInFile inname) Bam.closeInHandle $ \hin ->

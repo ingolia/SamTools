@@ -1,4 +1,4 @@
-{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE ForeignFunctionInterface, ScopedTypeVariables #-}
 
 -- | This module provides a fairly direct representation of the
 -- SAM/BAM alignment format, along with an interface to read and write
@@ -30,6 +30,8 @@ module Bio.SamTools.Bam (
   , mateTargetID, mateTargetName, mateTargetLen, matePosition, insertSize
     
   , nMismatch, nHits, matchDesc, auxGeti, auxGetf, auxGetd, auxGetA, auxGetZ, auxGet
+
+  , addAuxA
                                                                
   , refSpLoc, refSeqLoc
                       
@@ -292,6 +294,24 @@ instance AuxGet Char where
 
 instance AuxGet BS.ByteString where
   auxGet b str = auxGetZ b str
+
+addAuxA :: Bam1 -> String -> Char -> IO Bam1
+addAuxA b0 tag ch = withForeignPtr (ptrBam1 b0) $ \pbi0 ->
+  do pb' <- bamDup1 pbi0 >>= newForeignPtr bamDestroy1Ptr
+     withForeignPtr pb' $ \pbi' ->
+       withCAStringLen tag $ \(tagstr, tagstrlen) ->
+       alloca $ \(valptr :: (Ptr CChar)) -> do
+         poke valptr (CChar . fromIntegral . fromEnum $ ch)
+         bamAuxAppend pbi' tagstr typeCChar typeSize (castPtr valptr)
+     return $ Bam1 { ptrBam1 = pb', header = header b0 } 
+  where typeCChar = (CChar . fromIntegral . fromEnum $ 'A') 
+        typeSize = fromIntegral $ sizeOf (undefined :: CChar)
+
+-- bamAuxAppend :: Bam1Ptr -> Ptr CChar -> CChar -> CInt -> Ptr CUChar -> IO ()
+
+--    else do bptr <- newForeignPtr bamDestroy1Ptr b
+--            return . Just $ Bam1 { ptrBam1 = bptr, header = inHeader inh }
+
 
 -- | 'Just' the match descriptor alignment field, or 'Nothing' when it
 -- is absent
