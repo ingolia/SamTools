@@ -5,6 +5,7 @@ module Main
 import Control.Exception
 import Control.Monad
 import qualified Data.ByteString.Char8 as BS
+import Data.List
 import Data.Maybe
 import System.Environment
 import System.Exit
@@ -61,7 +62,11 @@ addAuxFields inname = let outname = dropExtension inname ++ "-auxa.bam"
                           myloop hin hout 0
                           return outname
   where myloop hin hout idx = Bam.get1 hin >>= maybe (return ()) (\b -> go b >> myloop hin hout (idx + 1))
-          where go b = Bam.addAuxA b "XX" 'm' >>= (\b' -> Bam.addAuxi b' "YZ" idx) >>= Bam.put1 hout
+          where go b = Bam.addAuxA b "XX" 'm' >>= (\b' -> Bam.addAuxi b' "YZ" idx) >>= 
+                       (\b'' -> Bam.addAuxZ b'' "aa" (digitName $ idx `mod` 10)) >>=
+                       Bam.put1 hout
+        digitName i | i < 0 || i > 9 = show i
+                    | otherwise = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"] !! i
 
 bamToSam :: FilePath -> IO FilePath
 bamToSam inname = let outname = dropExtension inname ++ "-test.sam"

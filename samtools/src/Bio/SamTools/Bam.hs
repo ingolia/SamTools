@@ -31,7 +31,7 @@ module Bio.SamTools.Bam (
     
   , nMismatch, nHits, matchDesc, auxGeti, auxGetf, auxGetd, auxGetA, auxGetZ, auxGet
 
-  , addAuxA, addAuxi
+  , addAuxA, addAuxi, addAuxZ
                                                                
   , refSpLoc, refSeqLoc
                       
@@ -310,6 +310,13 @@ addAuxi b0 tag i
       addAux b0 tag typecchar vallen (castPtr valptr)
   where typecchar = (CChar . fromIntegral . fromEnum $ 'i')
         vallen = fromIntegral $ sizeOf (undefined :: CInt)
+
+addAuxZ :: Bam1 -> String -> String -> IO Bam1
+addAuxZ b0 tag str
+  = withCAString str $ \cstr -> do
+      strlen <- lengthArray0 (0 :: CChar) cstr
+      addAux b0 tag typecchar (CInt . fromIntegral $ strlen + 1) (castPtr cstr)
+  where typecchar = (CChar . fromIntegral . fromEnum $ 'Z')
 
 addAux :: Bam1 -> String -> CChar -> CInt -> Ptr CUChar -> IO Bam1
 addAux b0 tag typecchar vallen valptr
