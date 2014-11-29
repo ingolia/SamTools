@@ -31,7 +31,7 @@ module Bio.SamTools.Bam (
     
   , nMismatch, nHits, matchDesc, auxGeti, auxGetf, auxGetd, auxGetA, auxGetZ, auxGet
 
-  , addAuxA
+  , addAuxA, addAuxi
                                                                
   , refSpLoc, refSeqLoc
                       
@@ -296,16 +296,30 @@ instance AuxGet BS.ByteString where
   auxGet b str = auxGetZ b str
 
 addAuxA :: Bam1 -> String -> Char -> IO Bam1
-addAuxA b0 tag ch = withForeignPtr (ptrBam1 b0) $ \pbi0 ->
-  do pb' <- bamDup1 pbi0 >>= newForeignPtr bamDestroy1Ptr
-     withForeignPtr pb' $ \pbi' ->
-       withCAStringLen tag $ \(tagstr, tagstrlen) ->
-       alloca $ \(valptr :: (Ptr CChar)) -> do
-         poke valptr (CChar . fromIntegral . fromEnum $ ch)
-         bamAuxAppend pbi' tagstr typeCChar typeSize (castPtr valptr)
-     return $ Bam1 { ptrBam1 = pb', header = header b0 } 
-  where typeCChar = (CChar . fromIntegral . fromEnum $ 'A') 
-        typeSize = fromIntegral $ sizeOf (undefined :: CChar)
+addAuxA b0 tag ch
+  = alloca $ \(valptr :: (Ptr CChar)) -> do
+      poke valptr (CChar . fromIntegral . fromEnum $ ch)
+      addAux b0 tag typecchar vallen (castPtr valptr)
+  where typecchar = (CChar . fromIntegral . fromEnum $ 'A') 
+        vallen = fromIntegral $ sizeOf (undefined :: CChar)
+
+addAuxi :: Bam1 -> String -> Int -> IO Bam1
+addAuxi b0 tag i
+  = alloca $ \(valptr :: (Ptr CInt)) -> do
+      poke valptr (CInt . fromIntegral $ i)
+      addAux b0 tag typecchar vallen (castPtr valptr)
+  where typecchar = (CChar . fromIntegral . fromEnum $ 'i')
+        vallen = fromIntegral $ sizeOf (undefined :: CInt)
+
+addAux :: Bam1 -> String -> CChar -> CInt -> Ptr CUChar -> IO Bam1
+addAux b0 tag typecchar vallen valptr
+  | Prelude.length tag == 2 = withForeignPtr (ptrBam1 b0) $ \pbi0 ->
+    do pb' <- bamDup1 pbi0 >>= newForeignPtr bamDestroy1Ptr
+       withForeignPtr pb' $ \pbi' ->
+         withCAStringLen tag $ \(tagstr, _tagstrlen) ->
+           bamAuxAppend pbi' tagstr typecchar vallen valptr
+       return $ Bam1 { ptrBam1 = pb', header = header b0 } 
+  | otherwise = ioError . userError $ "Bad BAM Aux tag " ++ show tag
 
 -- bamAuxAppend :: Bam1Ptr -> Ptr CChar -> CChar -> CInt -> Ptr CUChar -> IO ()
 
