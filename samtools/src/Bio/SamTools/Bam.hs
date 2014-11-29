@@ -22,7 +22,7 @@ module Bio.SamTools.Bam (
   , Header, nTargets, targetSeqList, targetSeq, targetSeqName, targetSeqLen, lookupTarget
   
   -- * SAM/BAM format alignments
-  , Bam1
+  , Bam1, header
   , targetID, targetName, targetLen, position
   , isPaired, isProperPair, isUnmap, isMateUnmap, isReverse, isMateReverse
   , isRead1, isRead2, isSecondary, isQCFail, isDup
