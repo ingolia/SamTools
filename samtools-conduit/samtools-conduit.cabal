@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                samtools-conduit
-version:             0.1.0.0
+version:             0.1.0.1
 synopsis:            Conduit interface to SAM/BAM format files through samtools
 description:         Conduit interface to SAM/BAM format files through samtools
 homepage:            http://www.ingolia-lab.org/samtools-tutorial.html
@@ -18,6 +18,6 @@ cabal-version:       >=1.8
 library
   exposed-modules:     Bio.SamTools.Conduit
   -- other-modules:       
-  build-depends:       base ==4.6.*, bytestring >= 0.9, samtools >= 0.2.4.1, filepath,
+  build-depends:       base >= 4.6 && <5, bytestring >= 0.9, samtools >= 0.2.4.1, filepath,
                        transformers, resourcet, conduit >= 1.1
   hs-source-dirs:      src
