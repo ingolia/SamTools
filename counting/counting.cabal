@@ -26,7 +26,7 @@ library
 Test-Suite test-counting
   Type: exitcode-stdio-1.0
   Main-is:             BenchmarkCounting.hs
-  Build-depends:       base >= 4.2 && < 5, bytestring, conduit,
+  Build-depends:       base >= 4.2 && < 5, bytestring, conduit, transformers, containers,
                        criterion, biocore >= 0.2, unordered-containers, vector, hashable
   Hs-Source-Dirs:      src, test
   Default-Language:    Haskell2010
