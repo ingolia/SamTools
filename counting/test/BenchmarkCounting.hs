@@ -24,7 +24,7 @@ import Criterion.Main
 
 main = do
   forM_ [ mvector, foldIntMap, iorefIntMap, foldHashMap, iorefHashMap] $ \counter ->
-    verifyCounter (intSourceCyclic littleNum) counter 17
+    verifyCounter (intSourceScatter littleNum) counter 17
   defaultMain
     [ bgroup "mvector" $ counterBenchGroup mvector
     , bgroup "foldIntMap" $ counterBenchGroup foldIntMap
@@ -37,11 +37,13 @@ counterBenchGroup :: Counter Int IO -> [Benchmark]
 counterBenchGroup counter =
   [ bench "cyclic" $ nfIO $ counter (intSourceCyclic numElts numReps)
   , bench "blocked" $ nfIO $ counter (intSourceBlocked numElts numReps)
+  , bench "scatter" $ nfIO $ counter (intSourceBlocked numElts numReps)
   , bench "cyclic-small-many" $ nfIO $ counter (intSourceCyclic littleNum bigNum)
   , bench "cyclic-big-few" $ nfIO $ counter (intSourceCyclic bigNum littleNum)
   ]
---intSourceScatter :: (Monad m) => Int -> Int -> C.Producer m Int
---intSourceScatter rng nrep = C.enumFromTo 1 (rng * nrep) C.=$= C.map (* (rng `div` 2 - 1)) C.=$= C.map (`mod` rng) 
+
+intSourceScatter :: (Monad m) => Int -> Int -> C.Producer m Int
+intSourceScatter rng nrep = C.enumFromTo 1 (rng * nrep) C.=$= C.map (* (rng `div` 2)) C.=$= C.map (`mod` rng) 
 
 intSourceCyclic :: (Monad m) => Int -> Int -> C.Producer m Int
 intSourceCyclic rng nrep = C.enumFromTo 1 (rng * nrep) C.=$= C.map (`mod` rng) 
@@ -53,9 +55,10 @@ numElts, numReps :: Int
 littleNum = 101
 numElts = 997
 numReps = 1009
+-- 9973
 bigNum = 10007
---numElts = 3331
---numReps = 3343
+-- 99991
+biggerNum = 100003
 
 verifyCounter :: (Ord a, Eq a, Show a) => (Int -> C.Producer IO a) -> (Counter a IO) -> Int -> IO ()
 verifyCounter source counter nreps = do
