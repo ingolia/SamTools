@@ -51,14 +51,16 @@ intSourceCyclic rng nrep = C.enumFromTo 1 (rng * nrep) C.=$= C.map (`mod` rng)
 intSourceBlocked :: (Monad m) => Int -> Int -> C.Producer m Int
 intSourceBlocked rng nrep = C.enumFromTo 0 (rng * nrep - 1) C.=$= C.map (`div` nrep)
 
-numElts, numReps :: Int
-littleNum = 101
-numElts = 997
-numReps = 1009
--- 9973
+littleNum, numElts, numReps, bigNum :: Int
+--littleNum = 101
+--numElts = 997
+--numReps = 1009
+--bigNum = 10007
+
+littleNum = 1009
+numElts = 3163
+numReps = 3167
 bigNum = 10007
--- 99991
-biggerNum = 100003
 
 verifyCounter :: (Ord a, Eq a, Show a) => (Int -> C.Producer IO a) -> (Counter a IO) -> Int -> IO ()
 verifyCounter source counter nreps = do
