@@ -1,4 +1,4 @@
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RankNTypes, MagicHash #-}
 module Main
        where
 
@@ -19,6 +19,8 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
 
 import System.IO
+
+import GHC.Exts
 
 import Criterion.Main
 

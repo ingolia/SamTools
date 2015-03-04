@@ -2,12 +2,16 @@
 module Statistics.Counting
        where
 
-import Data.Traversable
+import Control.Monad.Primitive
 
 import Data.Hashable
 import qualified Data.HashMap.Strict as HM
 import Data.IORef
 import qualified Data.IntMap.Strict as IM
+import Data.Mutable.Class as Mu
+import Data.Traversable
+
+
 
 class MCounter c where
   type CounterMonad c
@@ -24,20 +28,6 @@ instance MCounter (IORef Int) where
   newCounter = newIORef 0
   incrCounter ctref _x = modifyIORef' ctref succ
   freezeCounter ctref = readIORef ctref
-
--- instance MCounter (IORef (IM.IntMap (IORef Int))) where
---   type CounterMonad (IORef (IM.IntMap (IORef Int))) = IO
---   type CounterElt (IORef (IM.IntMap (IORef Int))) = Int
---   type CounterFrozen (IORef (IM.IntMap (IORef Int))) = IM.IntMap Int
---   newCounter = newIORef IM.empty
---   incrCounter imref x = do im <- readIORef imref
---                            ctref <- case IM.lookup x im of
---                              Just ref -> return ref
---                              Nothing -> do ref <- newIORef 0
---                                            writeIORef imref $! IM.insert x ref im
---                                            return ref
---                            modifyIORef' ctref succ
---   freezeCounter imref = readIORef imref >>= traverse readIORef
 
 instance (MCounter c, CounterMonad c ~ IO) => MCounter (IORef (IM.IntMap c)) where
   type CounterMonad (IORef (IM.IntMap c)) = CounterMonad c
