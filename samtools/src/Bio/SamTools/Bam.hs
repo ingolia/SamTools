@@ -422,7 +422,7 @@ withTamInFileWithIndex filename indexname = bracket (openTamInFileWithIndex file
 withBamInFile :: FilePath -> (InHandle -> IO a) -> IO a
 withBamInFile filename = bracket (openBamInFile filename) closeInHandle
 
--- | Reads one alignment from an input handle, or returns @Nothing@ for end-of-file
+-- | Read one alignment from an input handle, or returns @Nothing@ for end-of-file
 get1 :: InHandle -> IO (Maybe Bam1)
 get1 inh = withMVar (samfile inh) $ \fsam -> do
   b <- bamInit1
@@ -435,7 +435,7 @@ get1 inh = withMVar (samfile inh) $ \fsam -> do
     else do bptr <- newForeignPtr bamDestroy1Ptr b
             return . Just $ Bam1 { ptrBam1 = bptr, header = inHeader inh }
 
--- | Read a BAM file as a lazy strem of 'Bam1' records.
+-- | Read a BAM file as a lazy stream of 'Bam1' records.
 readBams :: FilePath -> IO [Bam1]
 readBams = openBamInFile >=> getBams 
   where
@@ -478,7 +478,7 @@ withTamOutFile filename hdr = bracket (openTamOutFile filename hdr) closeOutHand
 withBamOutFile :: FilePath -> Header -> (OutHandle -> IO a) -> IO a
 withBamOutFile filename hdr = bracket (openBamOutFile filename hdr) closeOutHandle
 
--- | Writes one alignment to an input handle.
+-- | Write one alignment to an output handle.
 -- 
 -- There is no validation that the target sequence set of the output
 -- handle matches the target sequence set of the alignment.
