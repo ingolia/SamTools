@@ -21,7 +21,7 @@ module Bio.SamTools.LowLevel ( TamFilePtr
                              , cigarOp, cigarLength
                              , BamFlag(..)
                              , flagPaired, flagProperPair, flagUnmap, flagMUnmap, flagReverse, flagMReverse
-                             , flagRead1, flagRead2, flagSecondary, flagQCFail, flagDup
+                             , flagRead1, flagRead2, flagSecondary, flagQCFail, flagDup, flagSupplementary
                              , Bam1Ptr, Bam1Int
                              , getTID, getPos, getFlag, getNCigar, getLQSeq, getMTID, getMPos, getISize
                              , bam1Strand, bam1MStrand, bam1Cigar, bam1QName, bam1Seq, bam1Qual, bam1Seqi
@@ -133,6 +133,9 @@ flagQCFail = BamFlag {#call pure unsafe bam_fqcfail#}
 
 flagDup :: BamFlag
 flagDup = BamFlag {#call pure unsafe bam_fdup#}
+
+flagSupplementary :: BamFlag
+flagSupplementary = BamFlag {#call pure unsafe bam_fsupplementary#}
 
 newtype BamCigar = BamCigar { unBamCigar :: CUInt }
                    deriving (Eq, Show, Ord)

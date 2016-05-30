@@ -16,6 +16,7 @@ uint32_t bam_fread2(void) { return BAM_FREAD2; }
 uint32_t bam_fsecondary(void) { return BAM_FSECONDARY; }
 uint32_t bam_fqcfail(void) { return BAM_FQCFAIL; }
 uint32_t bam_fdup(void) { return BAM_FDUP; }
+uint32_t bam_fsupplementary(void) { return BAM_FSUPPLEMENTARY; }
 
 uint32_t bam_cigar_mask(void) { return BAM_CIGAR_MASK; }
 uint32_t bam_cigar_shift(void) { return BAM_CIGAR_SHIFT; }

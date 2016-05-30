@@ -25,7 +25,7 @@ module Bio.SamTools.Bam (
   , Bam1, header
   , targetID, targetName, targetLen, position
   , isPaired, isProperPair, isUnmap, isMateUnmap, isReverse, isMateReverse
-  , isRead1, isRead2, isSecondary, isQCFail, isDup
+  , isRead1, isRead2, isSecondary, isQCFail, isDup, isSupplementary
   , cigars, queryName, queryLength, querySeq, queryQual
   , mateTargetID, mateTargetName, mateTargetLen, matePosition, insertSize
     
@@ -142,6 +142,10 @@ isQCFail = isFlagSet flagQCFail
 -- | Is the read a technical duplicate
 isDup :: Bam1 -> Bool
 isDup = isFlagSet flagDup
+
+-- | Is the read a supplementary read
+isSupplementary :: Bam1 -> Bool
+isSupplementary = isFlagSet flagSupplementary
 
 -- | CIGAR description of the alignment
 cigars :: Bam1 -> [Cigar]
