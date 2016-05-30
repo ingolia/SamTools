@@ -53,6 +53,9 @@ doSamTest bamin = do samout <- bamToSam bamin
                      bracket (Bam.openBamInFile bamin) Bam.closeInHandle $ \hin ->
                        Bam.get1 hin >>= maybe (return ()) (parseBam (Bam.inHeader hin))
 
+                     bracket (Bam.openBamInFile bamin) Bam.closeInHandle $ \hin ->
+                       Bam.get1 hin >>= maybe (return ()) (checkBam (Bam.inHeader hin))
+
                      addAuxFields bamin >>= hPutStrLn stderr
 
 addAuxFields :: FilePath -> IO FilePath
@@ -120,7 +123,15 @@ parseBam hdr b = sequence_ [ verify (Bam.queryName b)  (bamfields !! 0)
   where bamfields = BS.split '\t' . BS.pack . show $ b
         verify s1 s2 | s1 == s2 = return ()
                      | otherwise = error $ "Mismatch: " ++ show (s1, s2)
-                          
+
+checkBam :: Bam.Header -> Bam.Bam1 -> IO ()
+checkBam hdr b = sequence_ [ hPutStrLn stderr bamstr
+                           , hPutStrLn stderr $ "Query name = " ++ show (Bam.queryName b)
+                           , hPutStrLn stderr $ "Query length = " ++ show (Bam.queryLength b)
+                           ]
+  where bamstr = show b
+        bamfields = BS.split '\t' . BS.pack $ bamstr
+
 loop :: (IO (Maybe a)) -> (a -> IO ()) -> IO ()
 loop mi mo = go
   where go = mi >>= maybe (return ()) (\i -> mo i >> go)
